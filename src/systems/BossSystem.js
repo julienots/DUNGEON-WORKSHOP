@@ -102,8 +102,9 @@ export class BossSystem {
       }
       g.master.addXp(100 * entry.level);
     }
-    if (entry.event) bs.eventLast[entry.boss.id] = dayKey();
-    else if (win && !first) bs.lastRepeat[key] = dayKey();
+    // Une récompense par jour (la première victoire compte pour aujourd'hui). Les défaites peuvent être retentées.
+    if (win && entry.event) bs.eventLast[entry.boss.id] = dayKey();
+    else if (win) bs.lastRepeat[key] = dayKey();
     // XP pour l'équipe, même en cas de défaite
     const xp = Math.round(30 * entry.level * (win ? 2 : 0.5) * (1 + (m.xpGain || 0)));
     for (const mon of team) g.monsters.addXp(mon, xp);

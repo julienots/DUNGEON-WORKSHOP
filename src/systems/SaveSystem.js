@@ -3,7 +3,7 @@ import { createNewState } from '../core/GameState.js';
 import { deepDefaults } from '../utils/helpers.js';
 
 /** Stockage en mémoire (tests Node ou navigateur sans localStorage). */
-class MemoryStorage {
+export class MemoryStorage {
   constructor() {
     this.data = {};
   }
