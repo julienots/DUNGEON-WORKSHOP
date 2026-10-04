@@ -1,0 +1,15 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Art sheet</title>
+<style>body{background:#1a1418;margin:0;padding:8px;font:10px sans-serif;color:#ccc}div.i{display:inline-block;margin:3px;text-align:center;vertical-align:top}canvas{background:#2a2228;display:block}</style></head>
+<body><script type="module">
+import { SpriteFactory } from '../src/gfx/SpriteFactory.js';
+const jobs = SpriteFactory.buildJobs(); for (const j of jobs) j();
+const filter = new URLSearchParams(location.search).get('f') || '';
+for (const [k, c] of SpriteFactory.canvases) {
+  if (filter && !k.startsWith(filter)) continue;
+  const d = document.createElement('div'); d.className = 'i';
+  c.style.width = Math.min(c.width, 128) + 'px';
+  d.appendChild(c); d.appendChild(document.createTextNode(k)); document.body.appendChild(d);
+}
+document.title = 'ready';
+</script></body></html>

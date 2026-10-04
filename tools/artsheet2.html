@@ -1,0 +1,15 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Art sheet</title>
+<style>body{background:#1a1418;margin:0;padding:8px;font:10px sans-serif;color:#ccc}div.i{display:inline-block;margin:3px;text-align:center;vertical-align:top}canvas{background:#2a2228;display:block}</style></head>
+<body><script type="module">
+import { SpriteFactory } from '../src/gfx/SpriteFactory.js';
+const jobs = SpriteFactory.buildJobs(); for (const j of jobs) j();
+const prefixes = ['hero_', 'floor_', 'rock_cave_0', 'rockfront_cave_0', 'rock_demonic_0','rock_dimensional_1', 'trap_', 'boss_', 'p_', 'proj_', 'fx_', 'bg_cave'];
+for (const [k, c] of SpriteFactory.canvases) {
+  if (!prefixes.some(p => k.startsWith(p))) continue;
+  const d = document.createElement('div'); d.className = 'i';
+  c.style.width = Math.min(c.width, 96) + 'px';
+  d.appendChild(c); d.appendChild(document.createTextNode(k)); document.body.appendChild(d);
+}
+document.title = 'ready';
+</script></body></html>

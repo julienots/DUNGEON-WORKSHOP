@@ -1,0 +1,46 @@
+/**
+ * SUCCÈS (données pures)
+ * stat     compteur de state.stats (ou valeur dérivée calculée par AchievementSystem)
+ * target   objectif
+ * reward   récompense lors de la réclamation
+ */
+export const ACHIEVEMENTS = [
+  { id: 'a_first_kill', name: 'Premier aventurier vaincu', icon: '🏆', stat: 'adventurersKilled', target: 1, reward: { crystals: 20 } },
+  { id: 'a_kill_100', name: '100 aventuriers vaincus', icon: '🏆', stat: 'adventurersKilled', target: 100, reward: { crystals: 50 } },
+  { id: 'a_kill_1000', name: '1 000 aventuriers vaincus', icon: '🏆', stat: 'adventurersKilled', target: 1000, reward: { crystals: 100 } },
+  { id: 'a_kill_10000', name: '10 000 aventuriers vaincus', icon: '🏆', stat: 'adventurersKilled', target: 10000, reward: { crystals: 250 } },
+  { id: 'a_kill_100000', name: 'Fléau de l’humanité', icon: '☠️', stat: 'adventurersKilled', target: 100000, reward: { crystals: 600 } },
+  { id: 'a_first_boss', name: 'Premier boss', icon: '👑', stat: 'bossesDefeated', target: 1, reward: { crystals: 80 } },
+  { id: 'a_boss_10', name: '10 boss vaincus', icon: '👑', stat: 'bossesDefeated', target: 10, reward: { crystals: 200 } },
+  { id: 'a_boss_50', name: 'Régicide', icon: '👑', stat: 'bossesDefeated', target: 50, reward: { crystals: 500 } },
+  { id: 'a_level_10', name: 'Maître apprenti (niveau 10)', icon: '⭐', stat: 'masterLevel', target: 10, reward: { crystals: 40 } },
+  { id: 'a_level_50', name: 'Maître confirmé (niveau 50)', icon: '⭐', stat: 'masterLevel', target: 50, reward: { crystals: 150 } },
+  { id: 'a_level_100', name: 'Niveau 100', icon: '🌟', stat: 'masterLevel', target: 100, reward: { crystals: 400 } },
+  { id: 'a_monster_100', name: 'Monstre de niveau 100', icon: '💪', stat: 'maxMonsterLevel', target: 100, reward: { crystals: 300 } },
+  { id: 'a_collect_10', name: '10 monstres collectés', icon: '📖', stat: 'monstersOwnedTotal', target: 10, reward: { crystals: 30 } },
+  { id: 'a_collect_100', name: '100 monstres collectés', icon: '📖', stat: 'monstersOwnedTotal', target: 100, reward: { crystals: 200 } },
+  { id: 'a_species_all', name: 'Codex complet', icon: '📚', stat: 'speciesDiscoveredPct', target: 100, reward: { crystals: 1000 } },
+  { id: 'a_ascension', name: 'Ascension', icon: '✨', stat: 'ascensions', target: 1, reward: { crystals: 300 } },
+  { id: 'a_ascension_5', name: 'Maître éternel', icon: '✨', stat: 'ascensions', target: 5, reward: { crystals: 800 } },
+  { id: 'a_floor_5', name: 'Le Donjon', icon: '🏰', stat: 'maxFloor', target: 5, reward: { crystals: 50 } },
+  { id: 'a_floor_10', name: 'La Forteresse', icon: '🏯', stat: 'maxFloor', target: 10, reward: { crystals: 100 } },
+  { id: 'a_floor_20', name: 'La Citadelle souterraine', icon: '🌋', stat: 'maxFloor', target: 20, reward: { crystals: 200 } },
+  { id: 'a_floor_35', name: 'Le Royaume démoniaque', icon: '😈', stat: 'maxFloor', target: 35, reward: { crystals: 300 } },
+  { id: 'a_floor_50', name: 'Le Donjon dimensionnel', icon: '🌀', stat: 'maxFloor', target: 50, reward: { crystals: 500 } },
+  { id: 'a_floor_100', name: 'Le Donjon infini', icon: '♾️', stat: 'maxFloor', target: 100, reward: { crystals: 1500 } },
+  { id: 'a_evolve', name: 'Première évolution', icon: '🧬', stat: 'evolutions', target: 1, reward: { crystals: 40 } },
+  { id: 'a_legendary', name: 'Monstre légendaire', icon: '🟠', stat: 'legendaryOwned', target: 1, reward: { crystals: 100 } },
+  { id: 'a_mythic', name: 'Monstre mythique', icon: '🔴', stat: 'mythicOwned', target: 1, reward: { crystals: 250 } },
+  { id: 'a_ancient', name: 'Monstre ancien', icon: '🟢', stat: 'ancientOwned', target: 1, reward: { crystals: 600 } },
+  { id: 'a_synergy', name: 'Alchimiste des pièges', icon: '⚗️', stat: 'synergyTriggers', target: 1, reward: { crystals: 40 } },
+  { id: 'a_synergy_1000', name: 'Maître des synergies', icon: '⚗️', stat: 'synergyTriggers', target: 1000, reward: { crystals: 150 } },
+  { id: 'a_millionaire', name: 'Millionnaire', icon: '💰', stat: 'goldEarned', target: 1e6, reward: { crystals: 80 } },
+  { id: 'a_billionaire', name: 'Milliardaire', icon: '💰', stat: 'goldEarned', target: 1e9, reward: { crystals: 300 } },
+  { id: 'a_research_25', name: 'Érudit', icon: '🧪', stat: 'researchCompleted', target: 25, reward: { crystals: 60 } },
+  { id: 'a_research_200', name: 'Savant fou', icon: '🧪', stat: 'researchCompleted', target: 200, reward: { crystals: 200 } },
+  { id: 'a_perfect', name: 'Aucune chance', icon: '🛡️', stat: 'raidsDefended', target: 1000, reward: { crystals: 150 } },
+  { id: 'a_elite', name: 'Chasseur de héros', icon: '🌟', stat: 'eliteKilled', target: 50, reward: { crystals: 100 } },
+  { id: 'a_legend_item', name: 'Trésor légendaire', icon: '🗡️', stat: 'legendaryItems', target: 1, reward: { crystals: 80 } },
+  { id: 'a_fuse', name: 'Forgeron', icon: '🔨', stat: 'itemsFused', target: 10, reward: { crystals: 60 } },
+  { id: 'a_offline', name: 'Le donjon ne dort jamais', icon: '🌙', stat: 'offlineReturns', target: 10, reward: { crystals: 50 } },
+];

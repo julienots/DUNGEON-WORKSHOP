@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>icon</title></head>
+<body style="margin:0;background:#000"><script type="module">
+import { createCanvas, radial, linear } from '../src/gfx/draw.js';
+import { drawMonster } from '../src/gfx/monsterArt.js';
+import { drawRockTop } from '../src/gfx/tileArt.js';
+import { MONSTER_MAP } from '../src/data/monsters.js';
+import { THEMES } from '../src/data/floors.js';
+function make(size, maskable) {
+  const c = createCanvas(size, size);
+  const ctx = c.getContext('2d');
+  const r = maskable ? 0 : size * 0.22;
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, r);
+  ctx.clip();
+  ctx.fillStyle = linear(ctx, 0, 0, 0, size, [[0, '#2a1810'], [1, '#0a0506']]);
+  ctx.fillRect(0, 0, size, size);
+  ctx.globalAlpha = 0.35;
+  ctx.save(); ctx.scale(size / 128, size / 128); drawRockTop(ctx, THEMES.cave, 7); ctx.restore();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = radial(ctx, size / 2, size * 0.55, size * 0.5, [[0, 'rgba(255,140,40,0.75)'], [1, 'rgba(255,140,40,0)']]);
+  ctx.fillRect(0, 0, size, size);
+  const inner = maskable ? 0.62 : 0.8;
+  ctx.save();
+  ctx.translate(size * (1 - inner) / 2, size * (1 - inner) / 2 + size * 0.02);
+  ctx.scale((size * inner) / 128, (size * inner) / 128);
+  const g = MONSTER_MAP.goblin_king;
+  drawMonster(ctx, g.family, g.palette, { stage: 4, gear: 'crown' });
+  ctx.restore();
+  ctx.restore();
+  return c.toDataURL('image/png');
+}
+window.ICONS = { i192: make(192, false), i512: make(512, false), m512: make(512, true) };
+document.title = 'ready';
+</script></body></html>

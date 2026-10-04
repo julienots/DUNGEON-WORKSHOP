@@ -1,0 +1,24 @@
+{
+  "name": "dungeon-workshop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DUNGEON WORKSHOP - jeu mobile de gestion / idle / construction de donjon (Phaser 3, offline-first)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host --port 4173",
+    "test": "node --test tests/",
+    "test:e2e": "node scripts/e2e.mjs",
+    "balance": "node scripts/balance.mjs"
+  },
+  "dependencies": {
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/nunito": "^5.3.0",
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1",
+    "vite": "^7.1.0"
+  }
+}
