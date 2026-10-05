@@ -32,6 +32,16 @@ export const RARITY_INFO = {
   ancient: { name: 'Ancien', color: '#3cf2d0', glow: 0x20ffd0 },
 };
 
+/** Rôles de combat des monstres (affichage). */
+export const ROLE_INFO = {
+  tank: { name: 'Tank', icon: '🛡️' },
+  bruiser: { name: 'Combattant', icon: '🪓' },
+  dps: { name: 'Attaquant', icon: '⚔️' },
+  fast: { name: 'Rapide', icon: '💨' },
+  caster: { name: 'Lanceur de sorts', icon: '🔮' },
+  support: { name: 'Soutien', icon: '✚' },
+};
+
 export const EQUIP_SLOTS = ['weapon', 'armor', 'helmet', 'ring', 'artifact'];
 export const EQUIP_SLOT_INFO = {
   weapon: { name: 'Arme', icon: '🗡️' },

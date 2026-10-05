@@ -3,6 +3,7 @@ import { SAVE_VERSION, RESOURCE_KEYS } from '../utils/constants.js';
 import { cellKey } from '../utils/helpers.js';
 import { floorDef } from '../data/floors.js';
 import { defaultBiomeForFloor } from '../data/biomes.js';
+import { createModesState } from '../systems/RunSystem.js';
 
 /** Crée un étage vierge (numéro à partir de 1). */
 export function createFloorState(number, extraSize = 0) {
@@ -43,6 +44,7 @@ export function createStats() {
     researchCompleted: 0, treasuryCollects: 0, treasuryUpgrades: 0, floorsUnlocked: 0,
     eliteKilled: 0, critHits: 0, offlineReturns: 0, chestsOpened: 0, ascensions: 0, battlesWatched: 0,
     maxFloor: 1, monstersOwnedTotal: 0,
+    runsStarted: 0, runsPlayed: 0, runsWon: 0, runStages: 0,
     kill_warrior: 0, kill_archer: 0, kill_mage: 0, kill_paladin: 0, kill_healer: 0, kill_assassin: 0, kill_hunter: 0,
   };
 }
@@ -57,7 +59,7 @@ export function createNewState(now = Date.now(), startMult = 1) {
     version: SAVE_VERSION,
     createdAt: now,
     lastSaveTimestamp: now,
-    player: { name: 'Maître', level: 1, xp: 0, uidCounter: 1, tutorialStep: 0, tutorialDone: false, playTime: 0 },
+    player: { name: 'Maître', level: 1, xp: 0, uidCounter: 1, tutorialStep: 0, tutorialDone: false, playTime: 0, mastery: {}, rewardedLevel: 1 },
     resources,
     floors: [floor1],
     currentFloor: 0,
@@ -83,6 +85,7 @@ export function createNewState(now = Date.now(), startMult = 1) {
     shop: { lastFreeChest: 0, basicSummons: 0, equipChests: 0 },
     settings: { music: true, sfx: true, musicVolume: 0.5, sfxVolume: 0.8, quality: 'high', vibration: true, speed: 1, notifications: true, performanceMode: false },
     meta: {},
+    modes: createModesState(),
     log: [],
     uidSeq: 2,
   };

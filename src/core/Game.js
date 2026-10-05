@@ -24,6 +24,8 @@ import { BossSystem } from '../systems/BossSystem.js';
 import { OfflineSystem } from '../systems/OfflineSystem.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
 import { TutorialSystem } from '../systems/TutorialSystem.js';
+import { RunSystem } from '../systems/RunSystem.js';
+import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 
 /**
  * GAME CORE
@@ -57,6 +59,8 @@ export class Game {
     this.offline = new OfflineSystem(this);
     this.saves = new SaveSystem(this, storage);
     this.tutorial = new TutorialSystem(this);
+    this.runs = new RunSystem(this);
+    this.progression = new ProgressionSystem(this);
 
     this.viewFloor = 0;
     this.watching = true;

@@ -12,6 +12,7 @@
  *  7. Mobile : tactile + plusieurs résolutions (aucun débordement)
  *  8. Mémoire : pas de fuite évidente après navigation intensive
  *  9. Migration : une vraie sauvegarde V1 est convertie en V2 sans perte (copie V1 conservée)
+ * 10. Modes de jeu : écran Modes, lancement d'une run, combat regardé et combat rapide, fin de partie
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -134,7 +135,8 @@ try {
     });
     const sawCombat = await s2.page.waitForSelector('.watch-btn:not(.hidden)', { timeout: 45000 }).then(() => true).catch(() => false);
     if (sawCombat) {
-      await s2.page.tap('.watch-btn', { force: true });
+      // clic direct : le bouton peut disparaître pendant l'animation de tap si le raid se termine
+      await s2.page.evaluate(() => document.querySelector('.watch-btn')?.click());
       await s2.page.waitForTimeout(2500);
       await s2.page.screenshot({ path: `${OUT}/5-combat.png` });
     }
@@ -293,6 +295,39 @@ try {
     await page.screenshot({ path: `${OUT}/9-migration.png` });
     const ok = info.version === 2 && info.saved === 2 && info.floors === v1.floors.length && info.monsters === v1.monsters.length && info.traits && info.backup && /V2/.test(info.toast);
     record('Migration V1 → V2 (sauvegarde réelle)', ok && errors.length === 0, `${JSON.stringify(info)} ${errors.join(' | ').slice(0, 200)}`);
+
+    // -------------------------------------------------------------- 10. Modes de jeu
+    await page.tap('[data-hud="modes"]', { force: true });
+    await page.waitForSelector('.mode-card', { timeout: 10000 });
+    const cards = await page.$$eval('.mode-card', (els) => els.length);
+    await page.evaluate(() => [...document.querySelectorAll('.mode-card')].find((b) => b.textContent.includes('Survie')).click());
+    await page.waitForSelector('.run-setup', { timeout: 10000 });
+    await page.evaluate(() => [...document.querySelectorAll('.modal .btn')].find((b) => b.textContent.includes('équipe')).click());
+    await page.waitForSelector('.picker-footer', { timeout: 10000 });
+    await page.evaluate(() => [...document.querySelectorAll('.picker-footer .btn')][0].click());
+    await page.waitForSelector('.run-screen', { timeout: 10000 });
+    await page.evaluate(() => [...document.querySelectorAll('.run-actions .btn')].find((b) => b.textContent.includes('Combattre')).click());
+    await page.waitForFunction(() => window.__DW.phaser.scene.isActive('Battle'), null, { timeout: 10000 });
+    await page.screenshot({ path: `${OUT}/10-mode-combat.png` });
+    await page.evaluate(() => [...document.querySelectorAll('.battle-hud .btn')].find((b) => b.textContent.includes('Passer')).click());
+    await page.waitForFunction(() => !window.__DW.phaser.scene.isActive('Battle') && document.querySelector('.run-screen, .run-end'), null, { timeout: 15000 });
+    const afterWatch = await page.evaluate(() => ({ run: !!window.__DW.game.runs.run, stage: window.__DW.game.runs.run?.stage }));
+    // Combats rapides jusqu'à la fin de la partie
+    for (let i = 0; i < 80; i++) {
+      const done = await page.evaluate(() => {
+        const g = window.__DW.game;
+        if (!g.runs.run) return true;
+        const b = [...document.querySelectorAll('.run-actions .btn')].find((x) => x.textContent.includes('rapide'));
+        if (b) b.click();
+        return false;
+      });
+      if (done) break;
+      await page.waitForTimeout(120);
+    }
+    await page.waitForSelector('.run-end', { timeout: 10000 });
+    await page.screenshot({ path: `${OUT}/10-mode-fin.png` });
+    const modes = await page.evaluate(() => ({ runs: window.__DW.game.state.modes.records.survival?.runs, lb: window.__DW.game.state.modes.leaderboards.survival?.length }));
+    record('Modes de jeu : run complète (Survie)', cards === 8 && afterWatch.run && modes.runs === 1 && modes.lb === 1 && errors.length === 0, `${JSON.stringify({ cards, afterWatch, modes })} ${errors.join(' | ').slice(0, 200)}`);
     await context.close();
   }
 } catch (err) {

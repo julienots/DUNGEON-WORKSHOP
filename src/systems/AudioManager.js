@@ -236,6 +236,7 @@ export class AudioManager {
 
   // ------------------------------------------------------------------ musique
   playMusic(name, force = false) {
+    if (!TRACKS[name]) name = name?.startsWith('boss') ? 'boss' : 'dungeon';
     this.wantedTrack = name;
     if (!this.ctx) return;
     if (this.track === name && !force) return;

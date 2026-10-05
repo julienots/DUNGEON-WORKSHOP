@@ -66,7 +66,9 @@ export class Battle {
    *  record     enregistrer les événements (pour l'affichage)
    *  events     tableau partagé d'événements (raids multi-salles)
    *  timeOffset décalage temporel des événements
-   *  sideMods   { A: {critChance, elementPower, skillCooldown, bossDamage}, B: {...} }
+   *  sideMods   { A: {critChance, elementPower, skillCooldown, bossDamage, elementDamage, healMult}, B: {...} }
+   *             elementDamage : { fire: 0.5 } dégâts infligés par élément (règles de modes / biomes)
+   *             healMult      : multiplicateur des soins reçus (0 = aucun soin)
    */
   constructor(opts) {
     this.rng = opts.rng;
@@ -366,6 +368,7 @@ export class Battle {
     dmg *= 1 + (src.mods.damageBonus || 0);
     if (src.mods.bonusVs && tgt.rarity && src.mods.bonusVs[tgt.rarity]) dmg *= 1 + src.mods.bonusVs[tgt.rarity];
     if (tgt.isBoss && sideMod.bossDamage) dmg *= 1 + sideMod.bossDamage;
+    if (sideMod.elementDamage?.[element]) dmg *= 1 + sideMod.elementDamage[element];
     if (sk.execute && tgt.hp / tgt.maxHp < 0.3) dmg *= 1 + sk.execute;
     dmg *= 1 + this.vulnerability(tgt);
     dmg *= 1 - Math.min(0.75, tgt.mods.damageReduction || 0);
@@ -432,7 +435,9 @@ export class Battle {
   heal(src, tgt, amount, silent = false) {
     if (!tgt.alive) return 0;
     const boost = src ? 1 + (src.mods.healBoost || 0) : 1;
-    const value = Math.round(amount * boost);
+    const hm = this.sideMods[tgt.side]?.healMult;
+    const value = Math.round(amount * boost * (hm ?? 1));
+    if (value <= 0) return 0;
     const before = tgt.hp;
     tgt.hp = Math.min(tgt.maxHp, tgt.hp + value);
     const healed = tgt.hp - before;

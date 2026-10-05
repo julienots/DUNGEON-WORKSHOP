@@ -27,6 +27,9 @@ import { AchievementScene } from './scenes/AchievementScene.js';
 import { SettingsScene } from './scenes/SettingsScene.js';
 import { AdventurerScene } from './scenes/AdventurerScene.js';
 import { PrestigeScene } from './scenes/PrestigeScene.js';
+import { ModesScene } from './scenes/ModesScene.js';
+import { RunScene } from './scenes/RunScene.js';
+import { MasteryScene } from './scenes/MasteryScene.js';
 
 /** Résolution interne : pixels physiques (net sur écrans haute densité), plafonnée pour les performances. */
 const DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -61,7 +64,7 @@ const phaserGame = new Phaser.Game({
   render: { antialias: true, powerPreference: 'high-performance', roundPixels: false },
   input: { activePointers: 2 },
   fps: { target: 60, smoothStep: true },
-  scene: [BootScene, PreloadScene, CoreScene, MainMenuScene, DungeonScene, BattleScene, MonsterScene, ResearchScene, TreasuryScene, CodexScene, ShopScene, MissionScene, AchievementScene, SettingsScene, AdventurerScene, PrestigeScene],
+  scene: [BootScene, PreloadScene, CoreScene, MainMenuScene, DungeonScene, BattleScene, MonsterScene, ResearchScene, TreasuryScene, CodexScene, ShopScene, MissionScene, AchievementScene, SettingsScene, AdventurerScene, PrestigeScene, ModesScene, RunScene, MasteryScene],
 });
 phaserGame.registry.set('dpr', DPR);
 ctx.phaser = phaserGame;

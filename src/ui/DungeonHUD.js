@@ -24,6 +24,8 @@ export class DungeonHUD {
     if (this.el) return;
     const g = ctx.game;
     this.side = {
+      modes: IconButton('🎮', { title: 'Modes de jeu', onClick: () => ctx.router.go('Modes'), cls: 'modes-btn' }),
+      mastery: IconButton('🧠', { title: 'Maîtrise', onClick: () => ctx.router.go('Mastery') }),
       missions: IconButton('📜', { title: 'Missions', onClick: () => ctx.router.go('Missions') }),
       shop: IconButton('🛒', { title: 'Boutique', onClick: () => ctx.router.go('Shop') }),
       achievements: IconButton('🏆', { title: 'Succès', onClick: () => ctx.router.go('Achievements') }),
@@ -34,7 +36,7 @@ export class DungeonHUD {
     };
     for (const [k, b] of Object.entries(this.side)) b.dataset.hud = k;
     // Rangée d'accès rapide sous la barre du haut : laisse toute la largeur à la grille
-    this.row = h('div.hud-side.hud-row', this.side.missions, this.side.shop, this.side.achievements, this.side.adventurers, this.side.bosses, this.side.event, this.side.prestige);
+    this.row = h('div.hud-side.hud-row', this.side.modes, this.side.mastery, this.side.missions, this.side.shop, this.side.achievements, this.side.adventurers, this.side.bosses, this.side.event, this.side.prestige);
 
     this.raidInfo = h('div.raid-info');
     this.speedBtn = h('button.hud-btn.speed-btn', { type: 'button', onclick: () => this.cycleSpeed() }, '');
@@ -131,6 +133,10 @@ export class DungeonHUD {
       b.classList.toggle('hidden', !n);
     };
     setBadge(this.side.missions, g.missions.claimableCount());
+    setBadge(this.side.mastery, g.progression.availablePoints());
+    const daily = g.runs.isUnlocked('challenge') && !g.runs.dailyChallenge().done ? 1 : 0;
+    setBadge(this.side.modes, g.runs.run ? 1 : daily);
+    this.side.modes.classList.toggle('locked', !g.runs.isUnlocked('survival'));
     setBadge(this.side.achievements, g.achievements.claimableCount());
     setBadge(this.side.shop, Date.now() >= g.shop.freeChestReadyAt() ? 1 : 0);
     const bossReady = g.bosses.floorBosses().filter((b) => !b.defeated || b.repeatAvailable).length + (g.bosses.eventBoss()?.available ? 1 : 0);

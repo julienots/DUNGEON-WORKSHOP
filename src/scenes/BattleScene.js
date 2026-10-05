@@ -9,6 +9,7 @@ import { ROOMS } from '../data/rooms.js';
 import { FONT_TITLE, FONT_BODY, SPEEDS } from '../utils/constants.js';
 import { formatShort } from '../utils/format.js';
 import { SpriteFactory } from '../gfx/SpriteFactory.js';
+import { showRunEnd } from '../ui/screens/RunScreen.js';
 
 /**
  * BATTLE SCENE
@@ -50,6 +51,13 @@ export class BattleScene extends Phaser.Scene {
       this.room = this.g.dungeon.cell(data.floor, this.events_[start].x, this.events_[start].y);
       this.title = `${ROOMS[this.room?.room]?.icon || '⚔️'} ${ROOMS[this.room?.room]?.name || 'Combat'} — ${res.party.name}`;
       this.g.stats.add('battlesWatched', 1);
+    } else if (data.mode === 'run') {
+      // Étape d'un mode de jeu (Survie, Roguelite, Infini…)
+      this.events_ = data.run.result.events;
+      this.idx = 0;
+      this.t0 = 0;
+      this.title = data.run.title;
+      ctx.audio?.playMusic(data.music || 'boss');
     } else {
       this.events_ = data.result.result.events;
       this.idx = 0;
@@ -59,7 +67,7 @@ export class BattleScene extends Phaser.Scene {
     }
 
     // Décor
-    const theme = this.g.dungeon.def(data.floor ?? this.g.viewFloor).theme;
+    const theme = data.theme || this.g.dungeon.def(data.floor ?? this.g.viewFloor).theme;
     this.cameras.main.setBackgroundColor('#0a0708');
     const bg = this.add.tileSprite(0, 0, width, height, `bg_${theme}`).setOrigin(0);
     bg.tileScaleX = bg.tileScaleY = 2.5 * this.S;
@@ -77,14 +85,14 @@ export class BattleScene extends Phaser.Scene {
 
     this.buildHud();
     this.cameras.main.fadeIn(250, 0, 0, 0);
-    sfx(data.mode === 'boss' ? 'boss_roar' : 'raid_start');
+    sfx(data.mode === 'boss' || (data.mode === 'run' && data.run.stage.isBoss) ? 'boss_roar' : 'raid_start');
     this.events.once('shutdown', () => this.cleanup());
   }
 
   cleanup() {
     this.hud?.remove();
     if (this.rt) this.rt.locked = false;
-    if (this.data_?.mode === 'boss') ctx.audio?.playMusic('dungeon');
+    if (this.data_?.mode === 'boss' || this.data_?.mode === 'run') ctx.audio?.playMusic('dungeon');
   }
 
   buildHud() {
@@ -376,8 +384,9 @@ export class BattleScene extends Phaser.Scene {
     const { width, height } = this.scale;
     let win;
     if (data.mode === 'boss') win = data.result.win;
+    else if (data.mode === 'run') win = data.run.win;
     else win = winner === 'A';
-    const text = data.mode === 'boss'
+    const text = data.mode === 'boss' || data.mode === 'run'
       ? (win ? '🏆 VICTOIRE !' : '💀 DÉFAITE')
       : (win ? '🏆 Les aventuriers sont vaincus !' : winner === 'timeout' ? '🏃 Retraite des aventuriers' : '⚔️ Les aventuriers passent…');
     sfx(win ? 'victory' : 'defeat');
@@ -388,7 +397,9 @@ export class BattleScene extends Phaser.Scene {
     if (win) {
       for (let i = 0; i < 4; i++) this.time.delayedCall(i * 150, () => this.fx.burst(width * (0.3 + Math.random() * 0.4), height * (0.35 + Math.random() * 0.2), 0xffe14d, 14));
     }
-    if (data.mode === 'boss') {
+    if (data.mode === 'run') {
+      this.time.delayedCall(1500 / Math.min(2, this.speed), () => this.exit());
+    } else if (data.mode === 'boss') {
       this.time.delayedCall(1300, () => ctx.ui.hud?.showBossResult(data.result, () => this.exit()));
     } else {
       this.time.delayedCall(1800 / Math.min(2, this.speed), () => this.exit());
@@ -398,6 +409,9 @@ export class BattleScene extends Phaser.Scene {
   exit() {
     if (this.exiting) return;
     this.exiting = true;
+    // Fin de partie (mode de jeu) : bilan affiché au retour, même en quittant le combat en cours de route
+    const d = this.data_;
+    if (d?.mode === 'run' && d.run.ended) setTimeout(() => showRunEnd(d.run.endReport), 450);
     if (this.rt) this.rt.locked = false;
     this.cameras.main.fadeOut(200, 0, 0, 0);
     this.time.delayedCall(210, () => ctx.router.closeBattle());

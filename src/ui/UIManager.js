@@ -81,7 +81,7 @@ export class UIManager {
     this.closeScreen(true);
     const state = def.initState ? def.initState() : {};
     const body = h('div.screen-body.scroll');
-    const back = h('button.screen-back', { type: 'button', onclick: () => { sfx('close'); ctx.router.go('Dungeon'); } }, '‹');
+    const back = h('button.screen-back', { type: 'button', onclick: () => { sfx('close'); ctx.router.go(def.back || 'Dungeon'); } }, '‹');
     const titleEl = h('h2.screen-title', def.icon ? h('span.screen-icon', def.icon) : null, def.title);
     const headerExtra = h('div.screen-extra');
     const el = h(`div.screen.screen-${def.id}`, h('div.screen-head', back, titleEl, headerExtra), body);
@@ -91,7 +91,7 @@ export class UIManager {
       el,
       headerExtra,
       refresh: () => this.renderScreen(entry),
-      close: () => ctx.router.go('Dungeon'),
+      close: () => ctx.router.go(def.back || 'Dungeon'),
     };
     const entry = { def, el, body, api, unsubs: [], pending: false };
     for (const ev of def.events || []) {

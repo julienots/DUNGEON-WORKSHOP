@@ -57,6 +57,8 @@ export class ModifierSystem {
         for (const [k, v] of Object.entries(ms.mods)) m[k] = (m[k] || 0) + v;
       }
     }
+    // Maîtrise (V2)
+    if (this.game.progression) for (const e of this.game.progression.effects()) m[e.mod] = (m[e.mod] || 0) + e.value;
     // Niveau du Maître
     m.goldGain += (s.player.level - 1) * ECONOMY.master.goldBonusPerLevel;
 

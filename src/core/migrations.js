@@ -43,6 +43,11 @@ export function migrateSaveV1ToV2(state) {
   for (const f of state.floors || []) state.codex.biomes[f.biome] = true;
   for (const m of state.monsters || []) for (const t of m.traits) state.codex.traits[t] = true;
 
+  // Pas de récompenses rétroactives pour les niveaux déjà atteints ; les points de maîtrise, eux, le sont.
+  state.player = state.player || {};
+  if (!Number.isFinite(state.player.rewardedLevel)) state.player.rewardedLevel = state.player.level || 1;
+  if (!state.player.mastery || typeof state.player.mastery !== 'object') state.player.mastery = {};
+
   state.settings = state.settings || {};
   if (typeof state.settings.performanceMode !== 'boolean') state.settings.performanceMode = state.settings.quality === 'low';
 
