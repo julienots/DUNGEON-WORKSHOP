@@ -33,15 +33,15 @@ export class DungeonHUD {
       prestige: IconButton('✨', { title: 'Ascension', onClick: () => ctx.router.go('Prestige') }),
     };
     for (const [k, b] of Object.entries(this.side)) b.dataset.hud = k;
-    const left = h('div.hud-side.hud-left', this.side.missions, this.side.shop, this.side.achievements, this.side.adventurers);
-    const right = h('div.hud-side.hud-right', this.side.bosses, this.side.event, this.side.prestige);
+    // Rangée d'accès rapide sous la barre du haut : laisse toute la largeur à la grille
+    this.row = h('div.hud-side.hud-row', this.side.missions, this.side.shop, this.side.achievements, this.side.adventurers, this.side.bosses, this.side.event, this.side.prestige);
 
     this.raidInfo = h('div.raid-info');
     this.speedBtn = h('button.hud-btn.speed-btn', { type: 'button', onclick: () => this.cycleSpeed() }, '');
     this.watchBtn = h('button.hud-btn.watch-btn.hidden', { type: 'button', onclick: () => this.watch() }, '👁️', h('span', 'Regarder'));
     this.buildBtn = h('button.hud-btn.build-btn', { type: 'button', id: 'btn-build', onclick: () => this.toggleBuild() }, '🔨', h('span', 'Construire'));
     this.strip = h('div.raid-strip', this.raidInfo, h('div.strip-actions', this.watchBtn, this.speedBtn, this.buildBtn));
-    this.el = h('div.dungeon-hud', left, right, this.strip);
+    this.el = h('div.dungeon-hud', this.row, this.strip);
     this.host.appendChild(this.el);
     this.updateSpeed();
     this.timer = setInterval(() => this.updateRaid(), 250);

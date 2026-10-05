@@ -32,11 +32,11 @@ export class RaidSystem {
 
   interval(fi) {
     const rate = this.game.mods.get().raidRate || 0;
-    return Math.max(R.minInterval, R.baseInterval / (1 + rate)) + fi * 2;
+    return Math.max(R.minInterval, R.baseInterval / (1 + rate)) + Math.min(fi, 10);
   }
 
   rt(fi) {
-    if (!this.runtime[fi]) this.runtime[fi] = { nextAt: Date.now() + 3000 + fi * 4000, current: null, elapsed: 0 };
+    if (!this.runtime[fi]) this.runtime[fi] = { nextAt: Date.now() + 3000 + (fi % 6) * 2500, current: null, elapsed: 0 };
     return this.runtime[fi];
   }
 

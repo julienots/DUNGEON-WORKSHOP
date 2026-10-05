@@ -82,7 +82,7 @@ body {
 #ui .modal-backdrop,
 #ui .toast,
 #ui .tutorial,
-#ui .dungeon-hud .hud-side > *,
+#ui .dungeon-hud .hud-row > *,
 #ui .raid-strip,
 #ui .main-menu,
 #ui .battle-hud > * {
@@ -561,27 +561,29 @@ body {
   inset: 0;
 }
 
-.hud-side {
+.hud-row {
   position: absolute;
-  top: calc(var(--safe-top) + var(--top-h) + 20px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.hud-left {
   left: 8px;
-}
-
-.hud-right {
   right: 8px;
+  top: calc(var(--safe-top) + var(--top-h) + 14px);
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
 }
 
-.hud-side .icon-btn {
-  width: 46px;
+.hud-row .icon-btn {
+  flex: 0 1 48px;
+  width: auto;
+  min-width: 40px;
   height: 46px;
   font-size: 22px;
-  opacity: 0.92;
+}
+
+@media (min-width: 700px) {
+  .hud-row {
+    max-width: 520px;
+    margin: 0 auto;
+  }
 }
 
 .event-btn {
@@ -2546,7 +2548,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--safe-top) + var(--top-h) + 16px);
+  top: calc(var(--safe-top) + var(--top-h) + 72px);
   display: flex;
   flex-direction: column;
   align-items: center;

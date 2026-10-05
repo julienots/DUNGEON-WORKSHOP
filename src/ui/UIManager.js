@@ -65,7 +65,9 @@ export class UIManager {
 
   /** Hauteurs (px CSS) occupées par l'interface en haut et en bas (pour cadrer le donjon). */
   insets() {
-    const top = this.topHost.getBoundingClientRect().bottom || 64;
+    let top = this.topHost.getBoundingClientRect().bottom || 64;
+    const row = this.hud?.row;
+    if (row && !this.hud.el.classList.contains('hidden')) top = Math.max(top, row.getBoundingClientRect().bottom);
     const navTop = this.navHost.getBoundingClientRect().top || window.innerHeight - 70;
     let bottom = window.innerHeight - navTop;
     // Une feuille ouverte (construction, salle) réduit la zone visible du donjon
