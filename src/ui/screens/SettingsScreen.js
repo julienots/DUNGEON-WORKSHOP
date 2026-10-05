@@ -34,7 +34,7 @@ export function renderSettings(close) {
     toggle('Effets sonores', s.sfx, (v) => { s.sfx = v; apply(); }),
     slider('Volume effets', s.sfxVolume, (v) => { s.sfxVolume = v; apply(); }),
     h('h3.section-title', '📱 Affichage'),
-    toggle('Effets visuels réduits (économie de batterie)', s.quality === 'low', (v) => { s.quality = v ? 'low' : 'high'; g.requestSave(); g.bus.emit('dungeonChanged'); }),
+    toggle('Mode performance (moins d’effets, économie de batterie)', s.quality === 'low', (v) => { s.quality = v ? 'low' : 'high'; s.performanceMode = v; g.requestSave(); g.bus.emit('dungeonChanged'); }),
     toggle('Vibrations', s.vibration, (v) => { s.vibration = v; g.requestSave(); }),
     h('h3.section-title', '💾 Sauvegarde'),
     h('div.small.muted', `Dernière sauvegarde : ${new Date(g.state.lastSaveTimestamp).toLocaleTimeString('fr-FR')} · Temps de jeu ${formatTime(g.state.player.playTime)}`),
@@ -43,18 +43,24 @@ export function renderSettings(close) {
       Button('Exporter', { small: true, icon: '📤', onClick: () => exportSave() }),
       Button('Importer', { small: true, icon: '📥', onClick: () => importSave(close) }),
     ),
+    ...(g.saves.v1Backup()
+      ? [h('div.row.gap.wrap', h('div.small.muted', 'Votre sauvegarde V1 d’origine a été conservée intacte.'),
+        Button('Code V1', { small: true, icon: '🗄️', onClick: () => exportSave(g.saves.exportV1Backup(), 'Sauvegarde V1 d’origine', 'Copie intacte de votre partie avant la mise à jour V2. L’importer la convertira à nouveau.') }))]
+      : []),
     h('h3.section-title', '⚠️ Zone dangereuse'),
     Button('Réinitialiser la partie', { variant: 'danger', small: true, onClick: () => resetSave(close) }),
     h('h3.section-title', 'ℹ️ À propos'),
-    h('p.small.muted', 'DUNGEON WORKSHOP v1.0 — jeu 100% hors ligne. Graphismes et sons générés par le jeu. Toute la progression est stockée sur cet appareil : pensez à exporter votre sauvegarde !'),
+    h('p.small.muted', 'DUNGEON WORKSHOP v2.0 — jeu 100% hors ligne. Graphismes et sons générés par le jeu. Toute la progression est stockée sur cet appareil : pensez à exporter votre sauvegarde !'),
   );
   return wrap;
 }
 
-function exportSave() {
+function exportSave(code = null, title = 'Exporter la sauvegarde', hint = 'Conservez ce code pour restaurer votre progression sur un autre appareil.') {
   const g = ctx.game;
-  g.saveNow();
-  const code = g.saves.exportString();
+  if (!code) {
+    g.saveNow();
+    code = g.saves.exportString();
+  }
   const ta = h('textarea.save-code', { readonly: true }, code);
   const copy = Button('Copier', { variant: 'primary', small: true, onClick: async () => {
     try {
@@ -76,7 +82,7 @@ function exportSave() {
       a.remove();
     }, 100);
   } });
-  ctx.ui.modals.open(h('div', h('p.small', 'Conservez ce code pour restaurer votre progression sur un autre appareil.'), ta, h('div.row.gap', copy, dl)), { title: 'Exporter la sauvegarde', icon: '📤' });
+  ctx.ui.modals.open(h('div', h('p.small', hint), ta, h('div.row.gap', copy, dl)), { title, icon: '📤' });
 }
 
 function importSave(closeParent) {

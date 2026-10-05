@@ -2,6 +2,7 @@ import { ECONOMY } from '../config/economy.js';
 import { SAVE_VERSION, RESOURCE_KEYS } from '../utils/constants.js';
 import { cellKey } from '../utils/helpers.js';
 import { floorDef } from '../data/floors.js';
+import { defaultBiomeForFloor } from '../data/biomes.js';
 
 /** Crée un étage vierge (numéro à partir de 1). */
 export function createFloorState(number, extraSize = 0) {
@@ -26,6 +27,8 @@ export function createFloorState(number, extraSize = 0) {
     raidsDefended: 0,
     raidsLost: 0,
     lastRaidAt: 0,
+    biome: defaultBiomeForFloor(number),
+    decor: {},
   };
 }
 
@@ -33,6 +36,7 @@ export function createStats() {
   return {
     adventurersKilled: 0, raidsDefended: 0, raidsLost: 0, raidsTotal: 0,
     goldEarned: 0, stoneEarned: 0, metalEarned: 0, essenceEarned: 0, crystalsEarned: 0, darkEssenceEarned: 0,
+    legendaryEssenceEarned: 0, dimensionalFragmentsEarned: 0, mutationsGained: 0,
     roomsBuilt: 0, upgrades: 0, roomUpgrades: 0, trapUpgrades: 0, trapsPlaced: 0, trapTriggers: 0, synergyTriggers: 0,
     monstersSummoned: 0, monsterLevelUps: 0, evolutions: 0, bossesDefeated: 0, eventBossKills: 0,
     itemsFound: 0, itemsUpgraded: 0, itemsFused: 0, itemsRecycled: 0, legendaryItems: 0,
@@ -58,7 +62,10 @@ export function createNewState(now = Date.now(), startMult = 1) {
     floors: [floor1],
     currentFloor: 0,
     monsters: [
-      { uid: 'm1', speciesId: 'goblin', level: 1, xp: 0, equipment: {}, location: { floor: 0, x: ex, y: 1 }, favorite: false, obtainedAt: now },
+      {
+        uid: 'm1', speciesId: 'goblin', level: 1, xp: 0, equipment: {}, location: { floor: 0, x: ex, y: 1 }, favorite: false, obtainedAt: now,
+        traits: ['sturdy', 'berserker'], mutations: [], skin: 'classic',
+      },
     ],
     equipment: [],
     research: { levels: {}, active: [] },
@@ -66,12 +73,16 @@ export function createNewState(now = Date.now(), startMult = 1) {
     missions: { dailyKey: '', daily: [], weeklyKey: '', weekly: [], chains: {}, eventKey: '', event: [] },
     achievements: { claimed: {} },
     prestige: { count: 0, masterEssence: 0, totalMasterEssence: 0, upgrades: {}, runGold: 0, bestFloor: 1 },
-    codex: { monsters: { goblin: true }, bosses: {}, rooms: { entrance: true, core: true, basic: true }, traps: {}, equipment: {}, adventurers: {} },
+    codex: {
+      monsters: { goblin: true }, bosses: {}, rooms: { entrance: true, core: true, basic: true }, traps: {}, equipment: {}, adventurers: {},
+      mutations: {}, biomes: {}, lore: {}, traits: {},
+    },
     stats: createStats(),
     lifetime: { goldEarned: 0, adventurersKilled: 0 },
     bosses: { defeated: {}, lastRepeat: {}, eventLast: {} },
     shop: { lastFreeChest: 0, basicSummons: 0, equipChests: 0 },
-    settings: { music: true, sfx: true, musicVolume: 0.5, sfxVolume: 0.8, quality: 'high', vibration: true, speed: 1, notifications: true },
+    settings: { music: true, sfx: true, musicVolume: 0.5, sfxVolume: 0.8, quality: 'high', vibration: true, speed: 1, notifications: true, performanceMode: false },
+    meta: {},
     log: [],
     uidSeq: 2,
   };

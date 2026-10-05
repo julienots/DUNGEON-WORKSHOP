@@ -41,10 +41,10 @@ let loadResult;
 try {
   loadResult = game.loadOrCreate();
 } catch (err) {
-  console.error('Chargement impossible, nouvelle partie', err);
-  game.newGame();
-  loadResult = { isNew: true, report: null };
+  console.error('Chargement impossible, nouvelle partie (ancienne sauvegarde conservée)', err);
+  loadResult = game.recoverFromLoadFailure(err);
 }
+ctx.pendingLoadInfo = loadResult.loadInfo || null;
 ctx.game = game;
 ctx.pendingOfflineReport = loadResult.report && !loadResult.report.suspicious ? loadResult.report : null;
 ctx.audio = new AudioManager(game);

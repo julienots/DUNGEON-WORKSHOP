@@ -1,6 +1,7 @@
 import { EventBus } from './EventBus.js';
 import { createNewState } from './GameState.js';
 import { ECONOMY } from '../config/economy.js';
+import { SAVE_KEY } from '../utils/constants.js';
 import { ModifierSystem } from '../systems/ModifierSystem.js';
 import { EconomySystem } from '../systems/EconomySystem.js';
 import { StatsSystem } from '../systems/StatsSystem.js';
@@ -80,8 +81,9 @@ export class Game {
   loadOrCreate(now = Date.now()) {
     const loaded = this.saves.load();
     if (!loaded) {
+      // Une sauvegarde illisible a déjà été copiée à part par SaveSystem.load() : on peut repartir.
       this.newGame(now);
-      return { isNew: true, report: null };
+      return { isNew: true, report: null, loadInfo: this.saves.loadInfo };
     }
     this.state = loaded;
     this.afterLoad();
@@ -89,10 +91,19 @@ export class Game {
     this.mods.invalidate();
     this.saves.save(this.state, now);
     this.lastSaveAt = now;
-    return { isNew: false, report };
+    return { isNew: false, report, loadInfo: this.saves.loadInfo };
+  }
+
+  /** Dernier recours si le chargement plante : conserve la sauvegarde brute avant de repartir de zéro. */
+  recoverFromLoadFailure(err, now = Date.now()) {
+    const raw = this.saves.storage.getItem(SAVE_KEY);
+    const preservedKey = raw ? this.saves.preserveCorrupt(raw, now) : null;
+    this.newGame(now);
+    return { isNew: true, report: null, loadInfo: { error: err?.message || String(err), preservedKey, fixes: [] } };
   }
 
   afterLoad() {
+    this.codex.syncOwned();
     this.mods.invalidate();
     this.raids.reset();
     this.viewFloor = Math.min(this.state.currentFloor || 0, this.state.floors.length - 1);

@@ -1,5 +1,6 @@
-import { SAVE_KEY, SAVE_BACKUP_KEY, SAVE_VERSION, EXPORT_PREFIX } from '../utils/constants.js';
+import { SAVE_KEY, SAVE_BACKUP_KEY, SAVE_VERSION, SAVE_V1_BACKUP_KEY, SAVE_CORRUPT_PREFIX, EXPORT_PREFIX } from '../utils/constants.js';
 import { createNewState } from '../core/GameState.js';
+import { migrate as runMigrations, checkIntegrity } from '../core/migrations.js';
 import { deepDefaults } from '../utils/helpers.js';
 
 /** Stockage en mémoire (tests Node ou navigateur sans localStorage). */
@@ -65,6 +66,8 @@ export class SaveSystem {
     this.storage = storage;
     this.saveCount = 0;
     this.lastError = null;
+    /** Infos du dernier chargement : { migratedFrom, fixes, preservedKey, error } (affichées à l'écran). */
+    this.loadInfo = null;
   }
 
   serialize(state) {
@@ -88,34 +91,97 @@ export class SaveSystem {
     }
   }
 
-  parsePayload(raw) {
-    if (!raw) return null;
+  /** Décode l'enveloppe { v, c, d } et retourne l'état brut (non migré). */
+  decodePayload(raw) {
     const wrapper = JSON.parse(raw);
     if (!wrapper || typeof wrapper.d !== 'string') throw new Error('Format invalide');
     if (checksum(wrapper.d) !== wrapper.c) throw new Error('Sauvegarde corrompue (somme de contrôle)');
-    return this.validate(JSON.parse(wrapper.d));
+    return JSON.parse(wrapper.d);
   }
 
-  /** Charge la sauvegarde (ou la copie de secours). Retourne null si aucune. */
+  parsePayload(raw) {
+    if (!raw) return null;
+    return this.validate(this.decodePayload(raw));
+  }
+
+  /**
+   * Charge la sauvegarde (ou la copie de secours). Retourne null si aucune.
+   * Sauvegarde ancienne : 1) copie intacte conservée, 2) migration, 3) valeurs par défaut,
+   * 4) vérification d'intégrité, 5) chargement. Une sauvegarde illisible est copiée à part
+   * avant toute création de nouvelle partie : elle n'est jamais écrasée.
+   */
   load() {
+    this.loadInfo = { migratedFrom: null, fixes: [], preservedKey: null, error: null };
+    let firstRaw = null;
     for (const key of [SAVE_KEY, SAVE_BACKUP_KEY]) {
+      let raw = null;
       try {
-        const raw = this.storage.getItem(key);
+        raw = this.storage.getItem(key);
         if (!raw) continue;
-        const state = this.parsePayload(raw);
-        if (state) return state;
+        if (firstRaw === null) firstRaw = raw;
+        const data = this.decodePayload(raw);
+        const from = Number.isFinite(data?.version) ? data.version : 1;
+        if (from < SAVE_VERSION) this.preserveOldVersion(raw, from);
+        const state = this.validate(data);
+        if (state) {
+          if (from < SAVE_VERSION) this.loadInfo.migratedFrom = from;
+          if (key !== SAVE_KEY) this.loadInfo.fromBackup = true;
+          return state;
+        }
       } catch (err) {
         console.warn(`[SaveSystem] impossible de lire ${key}`, err);
+        this.loadInfo.error = err.message;
+        // La sauvegarde principale illisible serait écrasée à la prochaine sauvegarde : on la met à l'abri.
+        if (key === SAVE_KEY && raw) this.loadInfo.preservedKey = this.preserveCorrupt(raw);
       }
     }
+    if (firstRaw !== null && !this.loadInfo.preservedKey) this.loadInfo.preservedKey = this.preserveCorrupt(firstRaw);
     return null;
+  }
+
+  /** Conserve une copie intacte d'une sauvegarde d'ancienne version (une seule fois). */
+  preserveOldVersion(raw, version) {
+    const key = version === 1 ? SAVE_V1_BACKUP_KEY : `${SAVE_KEY}_v${version}_backup`;
+    try {
+      if (!this.storage.getItem(key)) this.storage.setItem(key, raw);
+    } catch (err) {
+      console.warn('[SaveSystem] copie de la sauvegarde ancienne impossible', err);
+    }
+  }
+
+  /** Copie une sauvegarde illisible sous une clé dédiée avant qu'une nouvelle partie ne la remplace. */
+  preserveCorrupt(raw, now = Date.now()) {
+    const key = SAVE_CORRUPT_PREFIX + now;
+    try {
+      this.storage.setItem(key, raw);
+      return key;
+    } catch (err) {
+      console.error('[SaveSystem] impossible de conserver la sauvegarde illisible', err);
+      return null;
+    }
+  }
+
+  /** Copie V1 conservée (chaîne brute) ou null. */
+  v1Backup() {
+    return this.storage.getItem(SAVE_V1_BACKUP_KEY);
+  }
+
+  /** Code d'export de la copie V1 d'origine (importable : il sera re-migré), ou null. */
+  exportV1Backup() {
+    const raw = this.v1Backup();
+    if (!raw) return null;
+    try {
+      return this.exportString(this.decodePayload(raw));
+    } catch {
+      return null;
+    }
   }
 
   hasSave() {
     return !!this.storage.getItem(SAVE_KEY);
   }
 
-  /** Valide et migre un état chargé. */
+  /** Valide, migre, complète et répare un état chargé. */
   validate(state) {
     if (!state || typeof state !== 'object') throw new Error('État vide');
     if (!state.resources || !Array.isArray(state.floors) || !state.floors.length || !Array.isArray(state.monsters)) {
@@ -127,18 +193,17 @@ export class SaveSystem {
     if (!Array.isArray(state.research.active)) state.research.active = state.research.active ? [state.research.active] : [];
     if (!Array.isArray(state.equipment)) state.equipment = [];
     if (!Array.isArray(state.log)) state.log = [];
-    if (state.currentFloor >= state.floors.length) state.currentFloor = 0;
-    for (const k of Object.keys(state.resources)) {
-      if (!Number.isFinite(state.resources[k]) || state.resources[k] < 0) state.resources[k] = 0;
+    const fixes = checkIntegrity(state);
+    if (fixes.length) {
+      console.warn('[SaveSystem] corrections d’intégrité', fixes);
+      if (this.loadInfo) this.loadInfo.fixes = fixes;
     }
     return state;
   }
 
+  /** Applique les migrations de version (voir core/migrations.js). Retourne la version d'origine. */
   migrate(state) {
-    const v = state.version || 0;
-    // Exemple de migration future : if (v < 2) { ... }
-    state.version = Math.max(v, SAVE_VERSION);
-    return state;
+    return runMigrations(state);
   }
 
   exportString(state = this.game.state) {
@@ -152,7 +217,8 @@ export class SaveSystem {
     if (!clean.startsWith(EXPORT_PREFIX)) throw new Error('Code de sauvegarde invalide');
     const wrapper = JSON.parse(b64ToUtf8(clean.slice(EXPORT_PREFIX.length)));
     if (checksum(wrapper.d) !== wrapper.c) throw new Error('Code de sauvegarde corrompu');
-    return this.validate(JSON.parse(wrapper.d));
+    const data = JSON.parse(wrapper.d);
+    return this.validate(data);
   }
 
   reset() {

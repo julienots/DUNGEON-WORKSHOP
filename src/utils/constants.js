@@ -5,13 +5,21 @@ export const MAX_GAME_HEIGHT = 1600;
 
 export const SAVE_KEY = 'dungeon_workshop_save';
 export const SAVE_BACKUP_KEY = 'dungeon_workshop_save_backup';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
+/** Copie intacte de la sauvegarde V1, conservée avant la migration vers V2. */
+export const SAVE_V1_BACKUP_KEY = 'dungeon_workshop_save_v1_backup';
+/** Préfixe des copies de sauvegardes illisibles (jamais écrasées). */
+export const SAVE_CORRUPT_PREFIX = 'dungeon_workshop_save_corrupt_';
 export const EXPORT_PREFIX = 'DW1:';
 
 export const FONT_TITLE = 'Cinzel, Georgia, serif';
 export const FONT_BODY = 'Nunito, "Segoe UI", Roboto, sans-serif';
 
-export const RESOURCE_KEYS = ['gold', 'stone', 'metal', 'crystals', 'essence', 'darkEssence'];
+/** Ressources de la partie en cours (remises à zéro par l'Ascension). */
+export const RUN_RESOURCE_KEYS = ['gold', 'stone', 'metal', 'crystals', 'essence', 'darkEssence'];
+/** Monnaies V2 permanentes (conservées par l'Ascension). */
+export const META_RESOURCE_KEYS = ['legendaryEssence', 'dimensionalFragments'];
+export const RESOURCE_KEYS = [...RUN_RESOURCE_KEYS, ...META_RESOURCE_KEYS];
 
 export const RARITIES = ['common', 'rare', 'epic', 'legendary', 'mythic', 'ancient'];
 

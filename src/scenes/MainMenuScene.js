@@ -95,6 +95,10 @@ export class MainMenuScene extends Phaser.Scene {
       this.scene.start('Dungeon');
       ui.hud.mount();
       ui.nav.setActive('Dungeon');
+      const info = ctx.pendingLoadInfo;
+      ctx.pendingLoadInfo = null;
+      if (info?.migratedFrom) ui.toasts.show(`Sauvegarde V${info.migratedFrom} convertie vers la V2 (copie d’origine conservée)`, { icon: '💾', type: 'success', duration: 5000 });
+      if (info?.preservedKey) ui.toasts.show('Sauvegarde illisible : une copie a été conservée, nouvelle partie démarrée.', { icon: '⚠️', type: 'error', duration: 6000 });
       if (ctx.pendingOfflineReport) {
         const r = ctx.pendingOfflineReport;
         ctx.pendingOfflineReport = null;

@@ -6,6 +6,8 @@ import { BALANCE, levelMult } from '../config/balance.js';
 import { ECONOMY } from '../config/economy.js';
 import { RARITIES } from '../utils/constants.js';
 import { scaleCost } from '../utils/helpers.js';
+import { TRAITS, rollTraits, traitEffects } from '../data/traits.js';
+import { RNG, hashString } from '../utils/rng.js';
 
 /** Fusionne des sacs de mods de passifs (additif, onHit : le plus fort l'emporte). */
 export function mergeMods(...list) {
@@ -56,11 +58,18 @@ export class MonsterSystem {
   }
 
   // ------------------------------------------------------------------ création
-  create(speciesId, { silent = false, level = 1 } = {}) {
+  create(speciesId, { silent = false, level = 1, traits = null, rng = null } = {}) {
     if (!MONSTER_MAP[speciesId]) throw new Error(`Espèce inconnue: ${speciesId}`);
     const s = this.game.state;
-    const m = { uid: `m${s.uidSeq++}`, speciesId, level, xp: 0, equipment: {}, location: null, favorite: false, obtainedAt: Date.now() };
+    const uid = `m${s.uidSeq++}`;
+    const now = Date.now();
+    const r = rng || new RNG(hashString(`${uid}:${now}:${Math.random()}`));
+    const m = {
+      uid, speciesId, level, xp: 0, equipment: {}, location: null, favorite: false, obtainedAt: now,
+      traits: traits || rollTraits(r), mutations: [], skin: 'classic',
+    };
     s.monsters.push(m);
+    for (const t of m.traits) this.game.codex.discover('traits', t);
     this.game.stats.add('monstersOwnedTotal', 1);
     this.game.codex.discover('monsters', speciesId);
     if (!silent) this.game.bus.emit('monstersChanged');
@@ -140,13 +149,24 @@ export class MonsterSystem {
       }
     }
 
+    // Traits (V2) : rendent chaque individu unique
+    const tr = traitEffects(m.traits);
+    hp *= 1 + tr.stats.hp;
+    atk *= 1 + tr.stats.atk;
+    def *= 1 + tr.stats.def;
+    spd *= 1 + tr.stats.spd;
+
     const passive = PASSIVES[sp.passive]?.mods || {};
-    const combined = mergeMods(passive, ...equipMods, flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
+    const combined = mergeMods(passive, ...tr.mods, ...equipMods, flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
     return {
       hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), spd: +spd.toFixed(1), crit,
       mods: combined,
       power: Math.round(hp * 0.25 + atk * 2 + def * 1.5 + spd * 4),
     };
+  }
+
+  traits(m) {
+    return (m.traits || []).map((id) => ({ id, ...TRAITS[id] })).filter((t) => t.name);
   }
 
   power(m) {
@@ -207,7 +227,7 @@ export class MonsterSystem {
   /** Ajoute de l'XP de combat (peut faire monter plusieurs niveaux, gratuitement). */
   addXp(m, amount) {
     if (!m || m.level >= this.maxLevel(m)) return 0;
-    m.xp += amount;
+    m.xp += amount * (1 + traitEffects(m.traits).xpMult);
     let gained = 0;
     while (m.level < this.maxLevel(m) && m.xp >= this.xpToNext(m)) {
       m.xp -= this.xpToNext(m);

@@ -24,6 +24,17 @@ export class CodexSystem {
     return true;
   }
 
+  /** Enregistre (sans notification) ce que le joueur possède déjà : biomes des étages, traits des monstres. */
+  syncOwned() {
+    const s = this.game.state;
+    for (const cat of ['biomes', 'traits', 'mutations']) if (!this.c[cat]) this.c[cat] = {};
+    for (const f of s.floors) if (f.biome) this.c.biomes[f.biome] = true;
+    for (const m of s.monsters) {
+      for (const t of m.traits || []) this.c.traits[t] = true;
+      for (const mu of m.mutations || []) this.c.mutations[mu.id || mu] = true;
+    }
+  }
+
   has(cat, id) {
     return !!this.c[cat]?.[id];
   }

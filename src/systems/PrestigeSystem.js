@@ -1,7 +1,7 @@
 import { PRESTIGE_UPGRADES, ASCENSION_TITLES } from '../data/prestige.js';
 import { ECONOMY } from '../config/economy.js';
 import { createFloorState } from '../core/GameState.js';
-import { RESOURCE_KEYS } from '../utils/constants.js';
+import { RUN_RESOURCE_KEYS } from '../utils/constants.js';
 import { RESEARCH_MAP } from '../data/research.js';
 
 const P = ECONOMY.prestige;
@@ -57,7 +57,7 @@ export class PrestigeSystem {
     const heritage = s.prestige.upgrades.pr_heritage || 0;
     const startMult = Math.pow(2, heritage) * (1 + this.p.count * 0.5);
     const crystals = s.resources.crystals;
-    for (const k of RESOURCE_KEYS) s.resources[k] = Math.round(ECONOMY.resources[k].startingAmount * startMult);
+    for (const k of RUN_RESOURCE_KEYS) s.resources[k] = Math.round(ECONOMY.resources[k].startingAmount * startMult);
     s.resources.crystals = crystals;
     // La recherche « Magie » est conservée (savoir permanent du Maître)
     const kept = {};

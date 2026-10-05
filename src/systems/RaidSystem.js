@@ -35,8 +35,8 @@ export class RaidSystem {
     return Math.max(R.minInterval, R.baseInterval / (1 + rate)) + Math.min(fi, 10);
   }
 
-  rt(fi) {
-    if (!this.runtime[fi]) this.runtime[fi] = { nextAt: Date.now() + 3000 + (fi % 6) * 2500, current: null, elapsed: 0 };
+  rt(fi, now = Date.now()) {
+    if (!this.runtime[fi]) this.runtime[fi] = { nextAt: now + 3000 + (fi % 6) * 2500, current: null, elapsed: 0 };
     return this.runtime[fi];
   }
 
@@ -203,6 +203,7 @@ export class RaidSystem {
       const m = g.monsters.get(uid);
       if (m) levelUps += g.monsters.addXp(m, Math.round(res.xpEach * xpLevelFactor(m.level, res.party.level)));
     }
+    if (levelUps) g.bus.emit('monstersChanged');
     g.master.addXp(res.masterXp);
 
     const st = g.stats;
@@ -252,7 +253,7 @@ export class RaidSystem {
     const view = g.viewFloor;
     const speed = g.state.settings.speed || 1;
     for (let fi = 0; fi < g.state.floors.length; fi++) {
-      const rt = this.rt(fi);
+      const rt = this.rt(fi, now);
       const watched = fi === view && g.watching;
       if (rt.current) {
         // La scène de combat détaillée pilote elle-même le temps du raid qu'elle affiche

@@ -101,6 +101,13 @@ export function openMonsterDetail(uid) {
       Stat('💪 Puissance', formatShort(stats.power), 'highlight'),
     ));
 
+    // Traits (V2)
+    const traits = g.monsters.traits(m);
+    if (traits.length) {
+      wrap.appendChild(h('div.trait-row', ...traits.map((t) => h(`div.trait-chip.rarity-${t.rarity}`, { style: { '--rc': RARITY_INFO[t.rarity].color }, title: t.desc, onclick: () => ctx.ui.toasts.show(`${t.name} : ${t.desc}`, { icon: t.icon }) },
+        h('span.trait-icon', t.icon), h('span.trait-name', t.name)))));
+    }
+
     // Niveau
     const lv = g.monsters.canLevelUp(m);
     wrap.appendChild(h('div.row.gap.wrap.center',

@@ -11,10 +11,11 @@
  *  6. Progression hors ligne : absence simulée de 8h -> gains
  *  7. Mobile : tactile + plusieurs résolutions (aucun débordement)
  *  8. Mémoire : pas de fuite évidente après navigation intensive
+ *  9. Migration : une vraie sauvegarde V1 est convertie en V2 sans perte (copie V1 conservée)
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 
 const PORT = 4173;
 const URL = `http://localhost:${PORT}/`;
@@ -260,6 +261,38 @@ try {
     const after = await heap();
     const growth = (after - before) / before;
     record('Mémoire : pas de fuite évidente', growth < 0.35 && errors.length === 0, `${(before / 1e6).toFixed(1)} Mo → ${(after / 1e6).toFixed(1)} Mo (${(growth * 100).toFixed(1)}%)`);
+    await context.close();
+  }
+
+  // ------------------------------------------------------------------ 9. Migration V1 → V2
+  {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    const raw = readFileSync('tests/fixtures/save-v1-late.json', 'utf8');
+    const v1 = JSON.parse(JSON.parse(raw).d);
+    // Injectée avant le démarrage du jeu (une seule fois), comme une vraie installation V1 mise à jour
+    await context.addInitScript((r) => {
+      if (!sessionStorage.getItem('dw_e2e_v1')) {
+        sessionStorage.setItem('dw_e2e_v1', '1');
+        localStorage.clear();
+        localStorage.setItem('dungeon_workshop_save', r);
+      }
+    }, raw);
+    const { page, errors } = await newMobile(undefined, context);
+    await page.goto(URL);
+    await enterGame(page);
+    await page.waitForTimeout(400);
+    const info = await page.evaluate(() => {
+      const g = window.__DW.game;
+      const toast = [...document.querySelectorAll('.toast-text')].map((e) => e.textContent).join(' | ');
+      return {
+        version: g.state.version, floors: g.state.floors.length, monsters: g.state.monsters.length,
+        traits: g.state.monsters.every((m) => m.traits?.length === 2), backup: !!localStorage.getItem('dungeon_workshop_save_v1_backup'), toast,
+        saved: JSON.parse(JSON.parse(localStorage.getItem('dungeon_workshop_save')).d).version,
+      };
+    });
+    await page.screenshot({ path: `${OUT}/9-migration.png` });
+    const ok = info.version === 2 && info.saved === 2 && info.floors === v1.floors.length && info.monsters === v1.monsters.length && info.traits && info.backup && /V2/.test(info.toast);
+    record('Migration V1 → V2 (sauvegarde réelle)', ok && errors.length === 0, `${JSON.stringify(info)} ${errors.join(' | ').slice(0, 200)}`);
     await context.close();
   }
 } catch (err) {

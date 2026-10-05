@@ -12,6 +12,8 @@ export const ECONOMY = {
     crystals: { name: 'Cristaux', icon: 'crystals', startingAmount: 60 },
     essence: { name: 'Essence', icon: 'essence', startingAmount: 15 },
     darkEssence: { name: 'Essence obscure', icon: 'darkEssence', startingAmount: 0 },
+    legendaryEssence: { name: 'Essence légendaire', icon: 'legendaryEssence', startingAmount: 0 },
+    dimensionalFragments: { name: 'Fragments dimensionnels', icon: 'dimensionalFragments', startingAmount: 0 },
   },
 
   /** Ce à quoi sert chaque ressource (affiché dans l'aide). */
@@ -22,6 +24,8 @@ export const ECONOMY = {
     crystals: 'Invocations rares, accélérations et boutique.',
     essence: 'Niveaux et évolutions des monstres, recherche.',
     darkEssence: 'Évolutions légendaires, salles dimensionnelles, étages profonds.',
+    legendaryEssence: 'Mutations, coffres légendaires et skins. Conservée après l’Ascension.',
+    dimensionalFragments: 'Modes spéciaux, portails et prestige avancé. Conservés après l’Ascension.',
   },
 
   raid: {

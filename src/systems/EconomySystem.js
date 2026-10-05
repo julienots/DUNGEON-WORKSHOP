@@ -4,6 +4,7 @@ import { ECONOMY } from '../config/economy.js';
 const EARN_STAT = {
   gold: 'goldEarned', stone: 'stoneEarned', metal: 'metalEarned', essence: 'essenceEarned',
   crystals: 'crystalsEarned', darkEssence: 'darkEssenceEarned',
+  legendaryEssence: 'legendaryEssenceEarned', dimensionalFragments: 'dimensionalFragmentsEarned',
 };
 
 /** Gestion des ressources : vérification, dépense, gain, application des réductions de coûts. */

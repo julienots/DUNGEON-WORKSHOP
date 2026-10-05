@@ -216,5 +216,11 @@ while (now < end) {
   }
 }
 console.log(log.join('\n'));
+if (process.env.SAVE_OUT) {
+  g.saves.save(g.state, now);
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync(process.env.SAVE_OUT, g.saves.storage.getItem('dungeon_workshop_save'));
+  console.log(`Sauvegarde écrite : ${process.env.SAVE_OUT}`);
+}
 console.log('\nJalons (heures) :', JSON.stringify(Object.fromEntries(Object.entries(milestones).map(([k, v]) => [k, +v.toFixed(1)]))));
 console.log(`Simulation : ${HOURS}h de jeu en ${((Date.now() - realStart) / 1000).toFixed(1)}s`);

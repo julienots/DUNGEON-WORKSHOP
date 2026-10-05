@@ -2848,3 +2848,27 @@ body.route-battle #ui .hud-host,
 body.route-battle #ui .tutorial {
   display: none;
 }
+
+/* ---------------------------------------------------------------- V2 : traits */
+.trait-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px 0 8px;
+}
+.trait-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--rc) 70%, transparent);
+  background: color-mix(in srgb, var(--rc) 16%, rgba(10, 8, 12, 0.7));
+  color: #f2ece2;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.trait-icon { font-size: 15px; }
