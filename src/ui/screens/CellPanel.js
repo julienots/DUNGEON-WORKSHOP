@@ -11,6 +11,7 @@ import { TRAPS, TRAP_LIST } from '../../data/traps.js';
 import { STATUSES } from '../../data/statuses.js';
 import { ELEMENTS } from '../../data/elements.js';
 import { BALANCE } from '../../config/balance.js';
+import { floorEconomyScale } from '../../data/floors.js';
 import { RARITY_INFO } from '../../utils/constants.js';
 import { formatShort, formatPercent } from '../../utils/format.js';
 
@@ -64,7 +65,7 @@ function buildContent(fi, x, y, cell, rerender) {
   if (rd.allyStatuses) bonuses.push(`Monstres : ${rd.allyStatuses.map((s) => `${STATUSES[s.id].icon} ${STATUSES[s.id].name}`).join(', ')}`);
   if (rd.rewardBonus) bonuses.push(`💰 Récompenses des raids +${Math.round((rd.rewardBonus + (rd.rewardPerLevel || 0) * (cell.level - 1)) * 100)}%`);
   if (rd.production) {
-    const lvl = Math.pow(1.15, cell.level - 1) * (1 + fi * 0.5) * (1 + (g.mods.get().productionGain || 0));
+    const lvl = Math.pow(1.15, cell.level - 1) * Math.pow(floorEconomyScale(fi + 1), 0.6) * (1 + (g.mods.get().productionGain || 0));
     bonuses.push(`⛏️ Production : ${Object.entries(rd.production).map(([k, v]) => `+${formatShort(v * lvl)} ${g.economy.resourceName(k)}/min`).join(', ')}`);
   }
   if (rd.perk === 'evolution') bonuses.push('🧬 Permet les évolutions · -10% coût des niveaux');

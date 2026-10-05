@@ -1,6 +1,6 @@
 import { ROOMS } from '../data/rooms.js';
 import { RESEARCH_MAP } from '../data/research.js';
-import { floorDef } from '../data/floors.js';
+import { floorDef, floorEconomyScale } from '../data/floors.js';
 import { ECONOMY } from '../config/economy.js';
 import { cellKey, parseCellKey, DIRS4, scaleCost } from '../utils/helpers.js';
 import { createFloorState } from '../core/GameState.js';
@@ -86,7 +86,7 @@ export class DungeonSystem {
 
   // ------------------------------------------------------------------ coûts
   floorScale(fi) {
-    return Math.pow(1.9, fi);
+    return floorEconomyScale(fi + 1);
   }
 
   buildCost(fi, roomId) {
@@ -337,8 +337,9 @@ export class DungeonSystem {
   // ------------------------------------------------------------------ étages
   floorUnlockCost(n) {
     const e = ECONOMY.floors;
-    const cost = scaleCost(e.unlockBaseCost, Math.pow(e.unlockGrowth, n - 2));
-    if (n >= 6) cost.darkEssence = Math.round(e.darkEssenceFromFloor * Math.pow(1.35, n - 6));
+    // Le coût suit l'économie de l'étage précédent (≈ une centaine de raids)
+    const cost = scaleCost(e.unlockBaseCost, floorEconomyScale(n - 1) * (1 + e.unlockGrowth * (n - 2)));
+    if (n >= 6) cost.darkEssence = Math.round(e.darkEssenceFromFloor * Math.pow(n - 5, 1.3));
     return this.game.economy.applyCostMods(cost, 'floorCost');
   }
 
@@ -347,7 +348,7 @@ export class DungeonSystem {
     const prev = this.floor(n - 2);
     const prevDef = this.def(n - 2);
     const reasons = [];
-    const needRaids = ECONOMY.floors.raidsToUnlockNext;
+    const needRaids = ECONOMY.floors.raidsToUnlockNext * (n - 1);
     if (prev.raidsDefended < needRaids) reasons.push(`Repousser ${needRaids} raids à l’étage ${n - 1} (${prev.raidsDefended}/${needRaids})`);
     let boss = null;
     if (prevDef.boss) {
@@ -389,7 +390,7 @@ export class DungeonSystem {
       for (const r of this.roomCells(i)) {
         const rd = ROOMS[r.cell.room];
         if (!rd.production) continue;
-        const lvl = Math.pow(1.15, r.cell.level - 1) * (1 + i * 0.5);
+        const lvl = Math.pow(1.15, r.cell.level - 1) * Math.pow(floorEconomyScale(i + 1), 0.6);
         for (const [k, v] of Object.entries(rd.production)) out[k] = (out[k] || 0) + v * lvl * prod;
       }
     }

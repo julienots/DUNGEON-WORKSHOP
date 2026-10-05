@@ -27,7 +27,7 @@ export const PrestigeScreen = {
     ));
     wrap.appendChild(h('div.cell-section',
       h('div.cell-section-title', '🔁 Ascension'),
-      h('p.small', 'Réinitialise : étages, salles, pièges, ressources (sauf cristaux), recherche, trésor et niveaux des monstres.'),
+      h('p.small', 'Réinitialise : étages, salles, pièges, ressources (sauf cristaux), recherche (sauf Magie), trésor et niveaux des monstres.'),
       h('p.small', 'Conserve : monstres et leurs évolutions, équipements, cristaux, codex, succès, missions et améliorations d’Ascension.'),
       can.ok ? h('div.good', h('b', `Gain : +${formatNumber(gain)} Essence du Maître`)) : h('div.bad', `🔒 ${can.reason} (actuellement étage ${g.state.floors.length})`),
       Button('Ascension !', { variant: 'gold', block: true, disabled: !can.ok, onClick: async () => {

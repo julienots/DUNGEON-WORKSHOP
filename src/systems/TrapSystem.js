@@ -3,6 +3,7 @@ import { ROOMS } from '../data/rooms.js';
 import { RESEARCH_MAP } from '../data/research.js';
 import { ECONOMY } from '../config/economy.js';
 import { levelMult } from '../config/balance.js';
+import { floorEconomyScale, floorDef } from '../data/floors.js';
 import { cellKey, DIRS4, scaleCost } from '../utils/helpers.js';
 
 /** Pièges : placement, amélioration, statistiques et synergies de placement. */
@@ -25,18 +26,18 @@ export class TrapSystem {
 
   placeCost(fi, trapId) {
     const count = this.game.dungeon.roomCells(fi).filter((r) => r.cell.trap).length;
-    return this.game.economy.applyCostMods(scaleCost(TRAPS[trapId].cost, Math.pow(1.9, fi) * Math.pow(1.1, count)));
+    return this.game.economy.applyCostMods(scaleCost(TRAPS[trapId].cost, floorEconomyScale(fi + 1) * Math.pow(1.1, count)));
   }
 
   upgradeCost(fi, trap) {
     const base = { ...TRAPS[trap.id].cost };
     delete base.crystals;
     delete base.darkEssence;
-    return this.game.economy.applyCostMods(scaleCost(base, Math.pow(1.9, fi) * Math.pow(ECONOMY.traps.upgradeGrowth, trap.level) * 0.7));
+    return this.game.economy.applyCostMods(scaleCost(base, floorEconomyScale(fi + 1) * Math.pow(ECONOMY.traps.upgradeGrowth, trap.level) * 0.7));
   }
 
   sellValue(fi, trap) {
-    const v = scaleCost(TRAPS[trap.id].cost, Math.pow(1.9, fi) * ECONOMY.traps.sellRefund);
+    const v = scaleCost(TRAPS[trap.id].cost, floorEconomyScale(fi + 1) * ECONOMY.traps.sellRefund);
     delete v.crystals;
     delete v.darkEssence;
     return v;
@@ -139,14 +140,15 @@ export class TrapSystem {
     const synergies = this.synergiesAt(fi, x, y);
     const synPower = 1 + (mods.synergyPower || 0);
     let damage = t.damage * levelMult('trap', cell.trap.level) * (1 + mods.trapDamage);
-    damage *= 1 + 0.5 * fi; // les pièges profonds sont plus puissants
+    // Les pièges profonds suivent la résistance des aventuriers de l'étage
+    damage *= Math.max(1, levelMult('adventurer', floorDef(fi + 1).level) * 0.5);
     const effects = t.effect ? [t.effect] : [];
     for (const s of synergies) {
       damage *= 1 + s.bonus.damage * synPower;
       for (const e of s.bonus.effects || []) effects.push(e);
     }
     return {
-      trapId: t.id, name: t.name, cell: { x, y }, level: cell.trap.level + fi * 3,
+      trapId: t.id, name: t.name, cell: { x, y }, level: cell.trap.level + floorDef(fi + 1).level,
       damage: Math.round(damage), cooldown: Math.max(1, t.cooldown * (1 + mods.trapCooldown)),
       range: t.range, element: t.element, effects, synergies, effectBonus: mods.trapEffectChance || 0,
     };

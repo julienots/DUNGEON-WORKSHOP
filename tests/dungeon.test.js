@@ -65,7 +65,7 @@ test("déblocage d'étage : conditions puis création", () => {
   const g = newGame();
   rich(g);
   assert.equal(g.dungeon.unlockNextFloor().ok, false, 'raids requis');
-  g.state.floors[0].raidsDefended = 10;
+  g.state.floors[0].raidsDefended = 1000;
   const r = g.dungeon.unlockNextFloor();
   assert.ok(r.ok, r.reason);
   assert.equal(g.state.floors.length, 2);
@@ -76,10 +76,10 @@ test('étage 6 bloqué par le gardien de l’étage 5', () => {
   const g = newGame();
   rich(g);
   for (let i = 0; i < 4; i++) {
-    g.state.floors[g.state.floors.length - 1].raidsDefended = 10;
+    g.state.floors[g.state.floors.length - 1].raidsDefended = 1000;
     assert.ok(g.dungeon.unlockNextFloor().ok);
   }
-  g.state.floors[4].raidsDefended = 10;
+  g.state.floors[4].raidsDefended = 1000;
   const info = g.dungeon.nextFloorInfo();
   assert.equal(info.ok, false);
   assert.ok(info.reasons.some((r) => r.includes('gardien')));

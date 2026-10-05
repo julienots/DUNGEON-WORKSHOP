@@ -3,6 +3,7 @@ import { ECONOMY } from '../config/economy.js';
 import { RARITIES } from '../utils/constants.js';
 import { scaleCost } from '../utils/helpers.js';
 import { RNG } from '../utils/rng.js';
+import { floorEconomyScale } from '../data/floors.js';
 
 const S = ECONOMY.shop;
 
@@ -18,7 +19,7 @@ export class ShopSystem {
   }
 
   floorScale() {
-    return Math.pow(1.8, this.game.state.floors.length - 1);
+    return Math.pow(floorEconomyScale(this.game.state.floors.length), 0.9);
   }
 
   // ------------------------------------------------------------------ invocations

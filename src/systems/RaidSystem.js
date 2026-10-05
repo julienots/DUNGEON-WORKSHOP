@@ -5,10 +5,16 @@ import { ECONOMY } from '../config/economy.js';
 import { BALANCE } from '../config/balance.js';
 import { RNG } from '../utils/rng.js';
 import { cellKey } from '../utils/helpers.js';
-import { floorDef } from '../data/floors.js';
+import { floorDef, depthMult } from '../data/floors.js';
 
 const R = ECONOMY.raid;
 const RW = ECONOMY.rewards;
+
+/** Facteur d'XP selon l'écart de niveau monstre / aventuriers (empêche le sur-niveau facile). */
+export function xpLevelFactor(monsterLevel, partyLevel) {
+  const gap = monsterLevel - partyLevel - RW.xpLevelGapFree;
+  return Math.max(0.05, Math.min(1, 1 - Math.max(0, gap) * RW.xpLevelGapPenalty));
+}
 
 /**
  * RAID SYSTEM
@@ -125,13 +131,14 @@ export class RaidSystem {
     let eliteKills = 0;
     let monsterXp = 0;
     const dropMult = 1 + (g.mods.get().dropChance || 0);
+    const depth = depthMult(fnum);
     for (const h of heroes) {
       if (h.alive) continue;
       kills++;
       if (h.elite) eliteKills++;
       killsByClass[h.heroClass] = (killsByClass[h.heroClass] || 0) + 1;
       const c = ADVENTURERS[h.heroClass];
-      const growth = Math.pow(RW.bountyGrowth, h.level - 1) * (h.elite ? BALANCE.eliteRewardMult : 1);
+      const growth = Math.pow(RW.bountyGrowth, h.level - 1) * depth * (h.elite ? BALANCE.eliteRewardMult : 1);
       const loot = c.loot || {};
       rewards.gold += RW.bounty.gold * growth * (loot.gold || 1);
       rewards.stone += RW.bounty.stone * growth * (loot.stone || 1);
@@ -194,7 +201,7 @@ export class RaidSystem {
     let levelUps = 0;
     for (const uid of res.participants) {
       const m = g.monsters.get(uid);
-      if (m) levelUps += g.monsters.addXp(m, res.xpEach);
+      if (m) levelUps += g.monsters.addXp(m, Math.round(res.xpEach * xpLevelFactor(m.level, res.party.level)));
     }
     g.master.addXp(res.masterXp);
 

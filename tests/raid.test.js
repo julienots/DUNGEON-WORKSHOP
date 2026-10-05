@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newGame, addRoom } from './helpers.js';
 import { cellKey } from '../src/utils/helpers.js';
+import { xpLevelFactor } from '../src/systems/RaidSystem.js';
 
 function strongDungeon(g) {
   addRoom(g, 0, 2, 1, 'combat', 5, { id: 'spikes', level: 5 });
@@ -35,6 +36,8 @@ test('raid repoussé : récompenses, XP, statistiques et menace', () => {
   assert.equal(res.outcome, 'victory');
   assert.ok(res.kills > 0 && res.rewards.gold > 0, 'or gagné');
   const gold = g.state.resources.gold;
+  // Monstres au niveau des aventuriers : XP complète
+  for (const m of g.state.monsters) m.level = res.party.level;
   const xp = g.state.monsters.map((m) => m.xp + m.level * 1000);
   g.raids.apply(res, { silent: true });
   assert.equal(g.state.resources.gold, gold + res.rewards.gold);
@@ -81,4 +84,11 @@ test('le coffre doit être relié pour être attaqué', () => {
   delete f.cells[coreKey];
   f.cells[cellKey(3, 4)] = { room: 'core', level: 1, trap: null };
   assert.equal(g.raids.canRaid(0), true, 'le parcours existe toujours (sans coffre atteignable)');
+});
+
+test("l'XP diminue face à des aventuriers beaucoup plus faibles", () => {
+  assert.equal(xpLevelFactor(10, 10), 1);
+  assert.equal(xpLevelFactor(13, 10), 1);
+  assert.ok(xpLevelFactor(20, 10) < 0.5);
+  assert.ok(xpLevelFactor(60, 5) > 0, 'jamais nulle');
 });

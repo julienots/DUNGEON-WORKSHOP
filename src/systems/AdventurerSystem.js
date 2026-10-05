@@ -1,7 +1,7 @@
 import { ADVENTURERS, ADVENTURER_LIST, PARTY_TEMPLATES, HERO_NAMES, GROUP_NAMES } from '../data/adventurers.js';
 import { PASSIVES } from '../data/passives.js';
 import { BALANCE, levelMult } from '../config/balance.js';
-import { floorDef } from '../data/floors.js';
+import { floorDef, depthMult } from '../data/floors.js';
 import { ECONOMY } from '../config/economy.js';
 
 /** Génération des groupes d'aventuriers selon l'étage, la menace et l'événement en cours. */
@@ -42,15 +42,15 @@ export class AdventurerSystem {
       const cls = (pool.length ? rng.weighted(pool) : rng.weighted(weights)).cls;
       const lvl = Math.max(1, level + rng.int(-1, 1));
       const elite = rng.chance(BALANCE.eliteChance * (1 + floorNumber * 0.02));
-      members.push(this.makeHero(cls.id, lvl, elite, `h${i}`, rng));
+      members.push(this.makeHero(cls.id, lvl, elite, `h${i}`, rng, depthMult(floorNumber)));
     });
     return { name: rng.pick(GROUP_NAMES), level, members };
   }
 
-  makeHero(classId, level, elite, id, rng) {
+  makeHero(classId, level, elite, id, rng, depth = 1) {
     const c = ADVENTURERS[classId];
     const lm = levelMult('adventurer', level);
-    const em = (elite ? BALANCE.eliteStatMult : 1) * BALANCE.adventurerStatMult;
+    const em = (elite ? BALANCE.eliteStatMult : 1) * BALANCE.adventurerStatMult * depth;
     let element = c.element;
     if (classId === 'mage' && rng) element = rng.pick(['fire', 'ice', 'lightning', 'arcane']);
     const name = elite && rng ? `${rng.pick(HERO_NAMES)} ${c.name === 'Chasseur de monstres' ? 'le Chasseur' : 'le ' + c.name}` : c.name;

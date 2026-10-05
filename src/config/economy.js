@@ -45,16 +45,19 @@ export const ECONOMY = {
 
   rewards: {
     /** Butin par aventurier vaincu (multiplié par la croissance de niveau). */
-    bounty: { gold: 20, stone: 3, metal: 0.8, essence: 0.6 },
+    bounty: { gold: 20, stone: 5, metal: 1.4, essence: 0.5 },
     bountyGrowth: 1.115,
     /** Chances par aventurier vaincu. */
     equipmentDropChance: 0.035,
     crystalDropChance: 0.015,
-    darkEssenceFromFloor: 8,
-    darkEssenceChance: 0.08,
+    darkEssenceFromFloor: 4,
+    darkEssenceChance: 0.1,
     /** XP de monstre par aventurier vaincu (partagée entre participants). */
-    monsterXpPerKill: 12,
-    monsterXpGrowth: 1.1,
+    monsterXpPerKill: 6,
+    monsterXpGrowth: 1.08,
+    /** L'XP diminue quand un monstre dépasse nettement le niveau des aventuriers. */
+    xpLevelGapFree: 3,
+    xpLevelGapPenalty: 0.12,
     /** XP du Maître du donjon */
     masterXpPerKill: 3,
     /** Bonus quand tout le groupe est anéanti. */
@@ -99,21 +102,22 @@ export const ECONOMY = {
 
   floors: {
     /** Coût de déblocage d'un nouvel étage n (n >= 2). */
-    unlockBaseCost: { gold: 2500, stone: 600, metal: 80 },
-    unlockGrowth: 2.15,
-    darkEssenceFromFloor: 10,
+    unlockBaseCost: { gold: 4000, stone: 400, metal: 60 },
+    /** Croissance linéaire supplémentaire par étage (en plus de l'échelle économique de l'étage). */
+    unlockGrowth: 0.2,
+    darkEssenceFromFloor: 6,
     /** Coût d'agrandissement (ligne ou colonne). */
     expandBaseCost: { gold: 400, stone: 200 },
     expandGrowth: 1.7,
     /** Nombre minimum de raids repoussés sur l'étage précédent pour débloquer le suivant. */
-    raidsToUnlockNext: 5,
+    raidsToUnlockNext: 8,
   },
 
   monsters: {
-    levelUpCost: { gold: 45, essence: 2 },
+    levelUpCost: { gold: 45, essence: 3 },
     levelUpGrowth: 1.13,
     xpToLevel: 40,
-    xpGrowth: 1.15,
+    xpGrowth: 1.17,
     evolveCostMult: 1,
     maxRosterBase: 30,
     releaseRefund: { essence: 3 },
@@ -171,7 +175,7 @@ export const ECONOMY = {
   prestige: {
     minFloor: 10,
     /** Essence du Maître = floor(base * (maxFloor - minFloor + 1)^exp * (1 + log10(totalGold)/goldLogDiv)) */
-    base: 5,
+    base: 10,
     exponent: 1.45,
     goldLogDiv: 12,
   },

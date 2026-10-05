@@ -1,5 +1,5 @@
 import { BOSSES, bossForFloor } from '../data/bosses.js';
-import { floorDef } from '../data/floors.js';
+import { floorDef, depthMult } from '../data/floors.js';
 import { levelMult } from '../config/balance.js';
 import { PASSIVES } from '../data/passives.js';
 import { makeUnit, simulateBattle } from './CombatSystem.js';
@@ -27,7 +27,7 @@ export class BossSystem {
       if (!b) continue;
       const key = this.bossKey(n);
       const defeated = !!this.game.state.bosses.defeated[key];
-      out.push({ key, floor: n, boss: b.boss, tier: b.tier, defeated, level: this.bossLevel(n, b), repeatAvailable: defeated && this.game.state.bosses.lastRepeat[key] !== dayKey() });
+      out.push({ key, floor: n, depth: depthMult(n), boss: b.boss, tier: b.tier, defeated, level: this.bossLevel(n, b), repeatAvailable: defeated && this.game.state.bosses.lastRepeat[key] !== dayKey() });
     }
     return out;
   }
@@ -44,8 +44,8 @@ export class BossSystem {
     return { key: `event:${ev.boss}`, boss, tier: 0, level, event: ev, available: this.game.events.eventBossAvailable(), firstDone: !!this.game.state.bosses.defeated[`event:${ev.boss}`] };
   }
 
-  bossUnit(boss, level, tier = 0) {
-    const lm = levelMult('boss', level) * (1 + tier * 0.6);
+  bossUnit(boss, level, tier = 0, depth = 1) {
+    const lm = levelMult('boss', level) * (1 + tier * 0.6) * depth;
     return makeUnit({
       id: 'boss', side: 'B', name: tier ? `${boss.name} éveillé${tier > 1 ? ' ' + tier : ''}` : boss.name, family: boss.family, element: boss.element,
       level, rarity: 'legendary', role: 'tank', isBoss: true,
@@ -74,7 +74,7 @@ export class BossSystem {
       if (!entry) return { ok: false, reason: 'Boss inconnu' };
       if (entry.defeated && !entry.repeatAvailable) return { ok: false, reason: 'Déjà vaincu aujourd’hui. Revenez demain pour une nouvelle récompense.' };
     }
-    const boss = this.bossUnit(entry.boss, entry.level, entry.tier);
+    const boss = this.bossUnit(entry.boss, entry.level, entry.tier, entry.depth || 1);
     const allies = team.map((m) => makeUnit(g.monsters.toUnit(m)));
     const m = g.mods.get();
     const result = simulateBattle({
@@ -136,7 +136,7 @@ export class BossSystem {
 
   /** Recommandation de puissance pour l'interface. */
   recommendedPower(entry) {
-    const u = this.bossUnit(entry.boss, entry.level, entry.tier);
+    const u = this.bossUnit(entry.boss, entry.level, entry.tier, entry.depth || 1);
     return Math.round((u.maxHp * 0.25 + u.baseAtk * 2 + u.baseDef * 1.5 + u.baseSpd * 4) * 1.3);
   }
 }

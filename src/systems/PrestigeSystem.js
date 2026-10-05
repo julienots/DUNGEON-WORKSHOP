@@ -2,6 +2,7 @@ import { PRESTIGE_UPGRADES, ASCENSION_TITLES } from '../data/prestige.js';
 import { ECONOMY } from '../config/economy.js';
 import { createFloorState } from '../core/GameState.js';
 import { RESOURCE_KEYS } from '../utils/constants.js';
+import { RESEARCH_MAP } from '../data/research.js';
 
 const P = ECONOMY.prestige;
 
@@ -58,7 +59,10 @@ export class PrestigeSystem {
     const crystals = s.resources.crystals;
     for (const k of RESOURCE_KEYS) s.resources[k] = Math.round(ECONOMY.resources[k].startingAmount * startMult);
     s.resources.crystals = crystals;
-    s.research = { levels: {}, active: [] };
+    // La recherche « Magie » est conservée (savoir permanent du Maître)
+    const kept = {};
+    for (const [id, lvl] of Object.entries(s.research.levels)) if (RESEARCH_MAP[id]?.cat === 'magic') kept[id] = lvl;
+    s.research = { levels: kept, active: [] };
     s.treasury = { level: 1, vault: 0 };
     g.mods.invalidate();
     const extra = g.mods.get().floorSize || 0;

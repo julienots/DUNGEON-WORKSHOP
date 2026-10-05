@@ -1,6 +1,7 @@
 import { DAILY_MISSIONS, WEEKLY_MISSIONS, PERMANENT_CHAINS } from '../data/missions.js';
 import { MONSTER_MAP } from '../data/monsters.js';
 import { RNG, hashString } from '../utils/rng.js';
+import { floorEconomyScale } from '../data/floors.js';
 import { dayKey, weekKey } from '../utils/helpers.js';
 
 /** Missions quotidiennes, hebdomadaires, permanentes et d'événement. */
@@ -20,7 +21,7 @@ export class MissionSystem {
   targetFor(def) {
     if (!def.scale) return def.target;
     const f = this.floors();
-    const factor = def.stat === 'goldEarned' ? Math.pow(1.8, f - 1) : 1 + 0.3 * (f - 1);
+    const factor = def.stat === 'goldEarned' ? floorEconomyScale(f) : 1 + 0.3 * (f - 1);
     return Math.round(def.target * factor);
   }
 
@@ -28,7 +29,7 @@ export class MissionSystem {
     const f = this.floors();
     const out = { ...reward };
     if (scale) {
-      const mult = Math.pow(1.7, f - 1);
+      const mult = Math.pow(floorEconomyScale(f), 0.9);
       for (const k of ['gold', 'stone', 'metal', 'essence']) if (out[k]) out[k] = Math.round(out[k] * (k === 'essence' ? Math.sqrt(mult) : mult));
     }
     return out;

@@ -4,7 +4,7 @@
  * cost(level) = baseCost * growth^level
  */
 export const PRESTIGE_UPGRADES = [
-  { id: 'pr_wealth', name: 'Avarice éternelle', icon: '🪙', desc: '+5% de revenus par niveau.', maxLevel: 100, baseCost: 1, growth: 1.25, effects: [{ mod: 'goldGain', value: 0.05 }, { mod: 'materialGain', value: 0.05 }] },
+  { id: 'pr_wealth', name: 'Avarice éternelle', icon: '🪙', desc: '+10% de revenus par niveau.', maxLevel: 100, baseCost: 1, growth: 1.22, effects: [{ mod: 'goldGain', value: 0.1 }, { mod: 'materialGain', value: 0.1 }] },
   { id: 'pr_wisdom', name: 'Sagesse ancestrale', icon: '📚', desc: '+5% d’XP par niveau.', maxLevel: 100, baseCost: 1, growth: 1.25, effects: [{ mod: 'xpGain', value: 0.05 }] },
   { id: 'pr_fury', name: 'Fureur du Maître', icon: '⚔️', desc: '+10% de dégâts des monstres et pièges par niveau.', maxLevel: 100, baseCost: 2, growth: 1.3, effects: [{ mod: 'monsterAtk', value: 0.1 }, { mod: 'trapDamage', value: 0.1 }] },
   { id: 'pr_resilience', name: 'Chair éternelle', icon: '❤️', desc: '+10% de PV des monstres par niveau.', maxLevel: 100, baseCost: 2, growth: 1.3, effects: [{ mod: 'monsterHp', value: 0.1 }] },

@@ -55,8 +55,24 @@ export const BALANCE = {
     support: { hp: 95, atk: 14, def: 9, spd: 12 },
   },
 
-  /** Adversaires: niveau de base par étage */
-  floorLevel: { base: 1, perFloor: 4.5, maxThreatBase: 10, maxThreatPerFloor: 2 },
+  /**
+   * Adversaires : niveau de base par étage, par paliers (la progression ralentit en profondeur
+   * pour rester compatible avec les niveaux maximum des monstres).
+   * Au-delà de `depthFrom`, les aventuriers et boss gagnent en plus ×depthGrowth de stats par étage.
+   */
+  floorLevel: {
+    base: 1,
+    segments: [
+      { upTo: 10, perFloor: 4.5 },
+      { upTo: 30, perFloor: 3 },
+      { upTo: Infinity, perFloor: 1.2 },
+    ],
+    maxThreatBase: 10,
+    maxThreatPerFloor: 2,
+    maxThreatCap: 40,
+    depthFrom: 30,
+    depthGrowth: 1.04,
+  },
 
   partySize: [
     { minFloor: 1, sizes: [2, 2, 3] },

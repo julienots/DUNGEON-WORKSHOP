@@ -1,5 +1,6 @@
 import { ECONOMY } from '../config/economy.js';
 import { scaleCost } from '../utils/helpers.js';
+import { floorEconomyScale } from '../data/floors.js';
 
 const T = ECONOMY.treasury;
 
@@ -21,7 +22,7 @@ export class TreasurySystem {
   incomePerMin(level = this.t.level) {
     const m = this.game.mods.get();
     const floors = this.game.state.floors.length;
-    return T.baseIncomePerMin * Math.pow(T.incomeGrowth, level - 1) * (1 + (floors - 1) * 0.25) * (1 + m.goldGain);
+    return T.baseIncomePerMin * Math.pow(T.incomeGrowth, level - 1) * Math.pow(floorEconomyScale(floors), 0.6) * (1 + m.goldGain);
   }
 
   upgradeCost() {

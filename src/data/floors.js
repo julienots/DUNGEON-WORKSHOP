@@ -1,4 +1,4 @@
-import { DUNGEON_TIERS } from '../config/economy.js';
+import { DUNGEON_TIERS, ECONOMY } from '../config/economy.js';
 import { BALANCE } from '../config/balance.js';
 import { bossForFloor } from './bosses.js';
 
@@ -42,8 +42,36 @@ export function floorDef(floor) {
     startRows: size.start[1],
     maxCols: size.max[0],
     maxRows: size.max[1],
-    level: Math.round(fl.base + (floor - 1) * fl.perFloor),
-    maxThreat: fl.maxThreatBase + floor * fl.maxThreatPerFloor,
+    level: Math.round(floorLevel(floor)),
+    maxThreat: Math.min(fl.maxThreatCap, fl.maxThreatBase + floor * fl.maxThreatPerFloor),
     boss: bossForFloor(floor),
   };
+}
+
+/** Niveau de base des aventuriers d'un étage (courbe par paliers). */
+export function floorLevel(floor) {
+  const fl = BALANCE.floorLevel;
+  let level = fl.base;
+  let prev = 1;
+  for (const seg of fl.segments) {
+    const end = Math.min(floor, seg.upTo);
+    if (end > prev) level += (end - prev) * seg.perFloor;
+    prev = Math.max(prev, end);
+    if (floor <= seg.upTo) break;
+  }
+  return level;
+}
+
+/** Multiplicateur de statistiques des ennemis au-delà de la profondeur `depthFrom`. */
+export function depthMult(floor) {
+  const fl = BALANCE.floorLevel;
+  return floor > fl.depthFrom ? Math.pow(fl.depthGrowth, floor - fl.depthFrom) : 1;
+}
+
+/**
+ * Échelle économique d'un étage : suit la croissance des récompenses des aventuriers,
+ * pour que coûts et gains évoluent ensemble quelle que soit la profondeur.
+ */
+export function floorEconomyScale(floor) {
+  return Math.pow(ECONOMY.rewards.bountyGrowth, floorLevel(floor) - 1) * depthMult(floor);
 }

@@ -1,6 +1,7 @@
 import { ECONOMY } from '../config/economy.js';
 import { floorDef } from '../data/floors.js';
 import { RNG } from '../utils/rng.js';
+import { xpLevelFactor } from './RaidSystem.js';
 
 const O = ECONOMY.offline;
 
@@ -69,7 +70,10 @@ export class OfflineSystem {
         agg.masterXp += res.masterXp;
         agg.itemSeeds.push(...res.itemSeeds);
         for (const [c, k] of Object.entries(res.killsByClass)) killsByClass[c] = (killsByClass[c] || 0) + k;
-        for (const uid of res.participants) xpByMonster[uid] = (xpByMonster[uid] || 0) + res.xpEach * scale;
+        for (const uid of res.participants) {
+          const m = g.monsters.get(uid);
+          xpByMonster[uid] = (xpByMonster[uid] || 0) + res.xpEach * scale * (m ? xpLevelFactor(m.level, res.party.level) : 1);
+        }
       }
       const raidsWon = Math.round(wins * (n / samples));
       const raidsLost = n - raidsWon;

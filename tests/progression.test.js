@@ -99,7 +99,7 @@ test('Ascension : réinitialisation partielle et bonus permanents', () => {
   const g = newGame();
   rich(g, 1e12);
   for (let i = 0; i < 9; i++) {
-    g.state.floors.at(-1).raidsDefended = 10;
+    g.state.floors.at(-1).raidsDefended = 1000;
     const n = g.state.floors.length + 1;
     if (n === 6 || n === 11) g.state.bosses.defeated[`f${n - 1}`] = 1;
     assert.ok(g.dungeon.unlockNextFloor().ok, `étage ${n}`);
@@ -122,7 +122,7 @@ test('combat de boss : victoire, récompenses et gardien', () => {
   const g = newGame();
   rich(g, 1e12);
   for (let i = 0; i < 4; i++) {
-    g.state.floors.at(-1).raidsDefended = 10;
+    g.state.floors.at(-1).raidsDefended = 1000;
     g.dungeon.unlockNextFloor();
   }
   const team = ['golem', 'troll', 'orc', 'vampire', 'dragon'].map((s) => {
