@@ -14,6 +14,10 @@ import { createFloorState } from '../core/GameState.js';
 export class DungeonSystem {
   constructor(game) {
     this.game = game;
+    // Cache de la production totale (appelée à chaque image par la trésorerie)
+    this.prodCache = null;
+    const drop = () => (this.prodCache = null);
+    for (const ev of ['dungeonChanged', 'modsChanged', 'biomeChanged', 'floorsChanged', 'stateLoaded']) game.bus.on(ev, drop);
   }
 
   get floors() {
@@ -542,6 +546,7 @@ export class DungeonSystem {
 
   // ------------------------------------------------------------------ production & bonus
   productionPerMin(fi = null) {
+    if (fi === null && this.prodCache) return { ...this.prodCache };
     const out = {};
     const prod = 1 + (this.game.mods.get().productionGain || 0);
     const list = fi === null ? this.floors.map((_, i) => i) : [fi];
@@ -558,6 +563,7 @@ export class DungeonSystem {
         }
       }
     }
+    if (fi === null) this.prodCache = { ...out };
     return out;
   }
 

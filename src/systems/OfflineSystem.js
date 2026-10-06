@@ -52,7 +52,8 @@ export class OfflineSystem {
       if (!g.raids.canRaid(fi)) continue;
       const n = Math.floor(seconds / g.raids.interval(fi));
       if (n <= 0) continue;
-      const samples = Math.min(n, O.sampleRaids);
+      // Beaucoup d'étages : moins d'échantillons par étage (temps de calcul borné)
+      const samples = Math.min(n, g.state.floors.length > 30 ? Math.max(2, Math.floor(O.sampleRaids / 2)) : O.sampleRaids);
       const scale = (n / samples) * O.efficiency;
       const floor = g.dungeon.floor(fi);
       let wins = 0;
