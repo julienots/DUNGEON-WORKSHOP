@@ -8,6 +8,7 @@ import { pickMonsters } from './pickers.js';
 import { openMonsterDetail } from './MonstersScreen.js';
 import { ROOMS, BUILDABLE_ROOMS } from '../../data/rooms.js';
 import { TRAPS, TRAP_LIST } from '../../data/traps.js';
+import { ROOM_SYNERGIES } from '../../data/roomSynergies.js';
 import { STATUSES } from '../../data/statuses.js';
 import { ELEMENTS } from '../../data/elements.js';
 import { BALANCE } from '../../config/balance.js';
@@ -16,6 +17,8 @@ import { RARITY_INFO } from '../../utils/constants.js';
 import { formatShort, formatPercent } from '../../utils/format.js';
 
 /** Panneau d'une salle (feuille du bas) : infos, monstres, piège, améliorations, actions. */
+const MOD_LABELS = { monsterHp: 'PV des monstres', monsterAtk: 'attaque des monstres', productionGain: 'production', goldGain: 'or' };
+
 export function openCellPanel(fi, x, y) {
   const g = ctx.game;
   const container = h('div.cell-panel');
@@ -69,12 +72,28 @@ function buildContent(fi, x, y, cell, rerender) {
     bonuses.push(`⛏️ Production : ${Object.entries(rd.production).map(([k, v]) => `+${formatShort(v * lvl)} ${g.economy.resourceName(k)}/min`).join(', ')}`);
   }
   if (rd.perk === 'evolution') bonuses.push('🧬 Permet les évolutions · -10% coût des niveaux');
+  if (rd.trainingXp) bonuses.push(`🏋️ XP passive : ${Math.round(rd.trainingXp * (1 + 0.02 * (cell.level - 1)) * 1000) / 10}% d’un niveau par minute (même hors ligne)`);
+  if (rd.danger) bonuses.push(`⚠️ Aventuriers de l’étage +${rd.danger} niveaux`);
+  if (rd.runReward) bonuses.push(`🌌 Récompenses des modes de jeu +${Math.round(rd.runReward * (1 + 0.02 * (cell.level - 1)) * 100)}%`);
+  if (rd.globalMods) bonuses.push(`🎓 Bonus globaux : ${Object.entries(rd.globalMods).map(([k, v]) => `${MOD_LABELS[k] || k} +${Math.round(v * (1 + 0.04 * (cell.level - 1)) * 100)}%`).join(', ')}`);
+  if (rd.perk === 'arena') bonuses.push('🏟️ Boss d’événement affrontables chaque jour · +20% récompenses des boss');
+  if (rd.perk === 'mutation') bonuses.push('🧬 Mutations et relance des traits des monstres');
   if (rd.perk === 'forge') bonuses.push('🔨 -20% coût d’amélioration des équipements');
   if (cell.room === 'core') bonuses.push('🎯 Les aventuriers qui l’atteignent volent une partie du Trésor.');
   if (cell.room === 'entrance') bonuses.push('🚪 Les groupes d’aventuriers arrivent ici.');
   const nextMs = (rd.milestones || []).find((m) => m.level > cell.level);
   if (nextMs) bonuses.push(`🎯 Niveau ${nextMs.level} : ${nextMs.desc}`);
   if (bonuses.length) wrap.appendChild(h('ul.bonus-list', bonuses.map((b) => h('li', b))));
+
+  // Synergies (V2)
+  const syns = g.dungeon.synergiesAt(fi, x, y);
+  const possible = ROOM_SYNERGIES.filter((sy) => g.dungeon.matchRoomTag(sy.room, cell.room) && !syns.some((a) => a.syn.id === sy.id));
+  if (syns.length || possible.length) {
+    wrap.appendChild(h('div.cell-section', h('div.cell-section-title', `⭐ Synergies ${syns.length ? `(${syns.length} active${syns.length > 1 ? 's' : ''})` : ''}`),
+      syns.map((sy) => h('div.syn-row.active', h('span.syn-icon', sy.syn.icon), h('div', h('b', sy.syn.name), h('div.small', sy.syn.desc)))),
+      possible.slice(0, 4).map((sy) => h('div.syn-row', h('span.syn-icon', sy.syn.icon), h('div', h('b.muted', sy.syn.name), h('div.small.muted', sy.syn.desc)))),
+    ));
+  }
 
   // Monstres
   const cap = g.dungeon.roomCapacity(cell);

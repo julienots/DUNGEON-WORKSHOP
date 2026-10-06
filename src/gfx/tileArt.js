@@ -433,6 +433,181 @@ export function drawRoomFloor(ctx, roomId, room, seed, S = 128) {
       }
       break;
     }
+    case 'training': {
+      // tapis + mannequin d'entraînement + haltères
+      ctx.fillStyle = rgba('#8a3a2a', 0.55);
+      ctx.fillRect(18, 60, 92, 52);
+      ctx.strokeStyle = rgba('#ffb060', 0.5);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(22, 64, 84, 44);
+      fillPoly(ctx, [[60, 30], [68, 30], [68, 96], [60, 96]], '#6a4a2a', OL, 2);
+      volume(ctx, (cc) => cc.ellipse(64, 46, 18, 16, 0, 0, Math.PI * 2), '#c8a070', OL, { cx: 64, cy: 40, r: 20, lw: 3 });
+      fillPoly(ctx, [[40, 56], [88, 56], [88, 62], [40, 62]], '#8a6a40', OL, 2);
+      ctx.strokeStyle = '#8a2a2a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(64, 46, 7, 0, Math.PI * 2);
+      ctx.stroke();
+      for (const x of [24, 104]) {
+        fillPoly(ctx, [[x - 10, 99], [x + 10, 99], [x + 10, 102], [x - 10, 102]], '#7a7a86', OL, 1.5);
+        circleVol(ctx, x - 10, 100, 5, '#3a3a44', OL, 1.5);
+        circleVol(ctx, x + 10, 100, 5, '#3a3a44', OL, 1.5);
+      }
+      torch(ctx, 18, 22);
+      break;
+    }
+    case 'mutation': {
+      // cuve de mutation lumineuse + hélice d'ADN
+      volume(ctx, (cc) => cc.roundRect(40, 22, 48, 76, 18), '#1a3a32', OL, { cx: 64, cy: 50, r: 50 });
+      ctx.save();
+      ctx.shadowColor = '#7affc0';
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = linear(ctx, 0, 30, 0, 92, [[0, rgba('#b8ffe0', 0.9)], [1, rgba('#2ac08a', 0.9)]]);
+      ctx.beginPath();
+      ctx.roundRect(46, 32, 36, 60, 14);
+      ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = 2.5;
+      for (let i = 0; i < 2; i++) {
+        ctx.beginPath();
+        for (let y = 36; y <= 88; y += 2) {
+          const x = 64 + Math.sin(y / 7 + i * Math.PI) * 9;
+          if (y === 36) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = i ? '#ff5ce1' : '#ffffff';
+        ctx.stroke();
+      }
+      fillPoly(ctx, [[36, 96], [92, 96], [96, 108], [32, 108]], '#4a4a52', OL, 2);
+      for (let i = 0; i < 5; i++) circleVol(ctx, 54 + rnd() * 20, 40 + rnd() * 44, 2 + rnd() * 2, '#e0fff0', null, 0);
+      break;
+    }
+    case 'arena': {
+      // sable, cercle d'arène, bannières
+      ctx.fillStyle = rgba('#c8a060', 0.5);
+      ctx.beginPath();
+      ctx.ellipse(64, 70, 50, 40, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#ffd84a';
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = rgba('#5a3a10', 0.6);
+      ctx.beginPath();
+      ctx.ellipse(64, 70, 30, 22, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      for (const x of [14, 114]) {
+        fillPoly(ctx, [[x - 1.5, 8], [x + 1.5, 8], [x + 1.5, 46], [x - 1.5, 46]], '#5a3a1a', OL, 1);
+        fillPoly(ctx, [[x, 10], [x + (x < 64 ? 16 : -16), 12], [x + (x < 64 ? 16 : -16), 34], [x + (x < 64 ? 8 : -8), 30], [x, 34]], '#c0392b', OL, 1.5);
+      }
+      // épées croisées
+      ctx.save();
+      ctx.translate(64, 70);
+      for (const a of [-0.7, 0.7]) {
+        ctx.save();
+        ctx.rotate(a);
+        fillPoly(ctx, [[-2, -22], [2, -22], [2, 12], [-2, 12]], '#d8dee8', OL, 1.5);
+        fillPoly(ctx, [[-8, 12], [8, 12], [8, 15], [-8, 15]], '#c9a227', OL, 1.5);
+        ctx.restore();
+      }
+      ctx.restore();
+      break;
+    }
+    case 'cursed': {
+      // pentagramme rouge et cercle de bougies
+      ctx.fillStyle = rgba('#000000', 0.35);
+      ctx.fillRect(0, 0, S, S);
+      ctx.save();
+      ctx.shadowColor = '#ff2040';
+      ctx.shadowBlur = 14;
+      ctx.strokeStyle = '#ff4f6d';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(c, c, 38, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      for (let i = 0; i <= 5; i++) {
+        const a = -Math.PI / 2 + (i * 4 * Math.PI) / 5;
+        const x = c + Math.cos(a) * 38;
+        const y = c + Math.sin(a) * 38;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        const x = c + Math.cos(a) * 50;
+        const y = c + Math.sin(a) * 50;
+        fillPoly(ctx, [[x - 3, y - 4], [x + 3, y - 4], [x + 3, y + 8], [x - 3, y + 8]], '#e8e0cf', OL, 1.2);
+        ctx.save();
+        ctx.shadowColor = '#ffaa33';
+        ctx.shadowBlur = 10;
+        ellipse(ctx, x, y - 7, 2.5, 4, '#ffcc55');
+        ctx.restore();
+      }
+      break;
+    }
+    case 'portal': {
+      // anneau de pierre et vortex
+      ctx.fillStyle = rgba('#000000', 0.3);
+      ctx.fillRect(0, 0, S, S);
+      volume(ctx, (cc) => cc.ellipse(64, 60, 40, 48, 0, 0, Math.PI * 2), '#4a4658', OL, { cx: 64, cy: 40, r: 60 });
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(64, 60, 30, 38, 0, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = radial(ctx, 64, 60, 40, [[0, '#ffffff'], [0.25, '#9fd0ff'], [0.6, '#7a5cff'], [1, '#1a0a40']]);
+      ctx.fillRect(20, 16, 88, 90);
+      ctx.translate(64, 60);
+      ctx.strokeStyle = rgba('#e0d8ff', 0.7);
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.beginPath();
+        ctx.arc(8, 0, 16, -1.2, 1.4);
+        ctx.stroke();
+      }
+      ctx.restore();
+      for (const [x, y] of [[64, 12], [26, 40], [102, 40], [30, 92], [98, 92]]) {
+        ctx.save();
+        ctx.shadowColor = '#7a8aff';
+        ctx.shadowBlur = 8;
+        circleVol(ctx, x, y, 3.5, '#9fb0ff', OL, 1.2);
+        ctx.restore();
+      }
+      break;
+    }
+    case 'master': {
+      // tapis royal, trône et glyphe doré
+      ctx.fillStyle = linear(ctx, 0, 0, 0, S, [[0, '#7a1a2a'], [1, '#4a0a14']]);
+      ctx.fillRect(44, 40, 40, 88);
+      ctx.fillStyle = '#c9a227';
+      ctx.fillRect(44, 40, 3, 88);
+      ctx.fillRect(81, 40, 3, 88);
+      ctx.save();
+      ctx.shadowColor = '#ffe08a';
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = rgba('#ffe08a', 0.8);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(64, 92, 20, 0, Math.PI * 2);
+      ctx.stroke();
+      star(ctx, 64, 92, 12, 6, 0.5);
+      ctx.stroke();
+      ctx.restore();
+      volume(ctx, (cc) => {
+        cc.moveTo(44, 46);
+        cc.lineTo(44, 14);
+        cc.quadraticCurveTo(64, 2, 84, 14);
+        cc.lineTo(84, 46);
+      }, '#6a1a2a', OL, { cx: 64, cy: 20, r: 30 });
+      volume(ctx, (cc) => cc.roundRect(40, 40, 48, 14, 4), '#c9a227', OL, { cx: 64, cy: 44, r: 30 });
+      for (const x of [44, 84]) circleVol(ctx, x, 12, 4, '#ffcc33', OL, 1.5);
+      torch(ctx, 16, 30);
+      torch(ctx, 112, 30);
+      break;
+    }
     default:
       break;
   }

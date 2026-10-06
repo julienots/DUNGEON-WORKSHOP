@@ -72,6 +72,10 @@ export class Game {
     this.bus.on('stat', () => {
       this.achievementDirty = true;
     });
+    // Certaines salles donnent des bonus globaux (Salle du maître)
+    this.bus.on('dungeonChanged', () => {
+      this.mods.cache = null;
+    });
   }
 
   newGame(now = Date.now()) {
@@ -180,6 +184,7 @@ export class Game {
     if (this.slowTimer >= 1) {
       this.slowTimer = 0;
       this.research.update(now);
+      if (this.dungeon.trainTick(1)) this.bus.emit('monstersChanged');
       this.events.update(new Date(now));
       this.tutorial.update();
       if (this.achievementDirty) {

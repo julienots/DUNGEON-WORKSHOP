@@ -1,4 +1,6 @@
 import { ROOMS } from '../data/rooms.js';
+import { ROOM_SYNERGIES } from '../data/roomSynergies.js';
+import { TRAPS } from '../data/traps.js';
 import { RESEARCH_MAP } from '../data/research.js';
 import { floorDef, floorEconomyScale } from '../data/floors.js';
 import { ECONOMY } from '../config/economy.js';
@@ -140,6 +142,7 @@ export class DungeonSystem {
     if (this.cell(fi, x, y)) return { ok: false, reason: 'Case déjà occupée' };
     if (!this.hasRoomNeighbor(fi, x, y)) return { ok: false, reason: 'Doit être adjacente à une salle existante' };
     if (rd.maxPerFloor && this.countRooms(roomId, fi) >= rd.maxPerFloor) return { ok: false, reason: `Maximum ${rd.maxPerFloor} par étage` };
+    if (rd.maxTotal && this.countRooms(roomId) >= rd.maxTotal) return { ok: false, reason: `Maximum ${rd.maxTotal} dans tout le donjon` };
     const ruleErr = this.checkRules(fi, x, y, roomId, this.floor(fi).cells);
     if (ruleErr) return { ok: false, reason: ruleErr };
     const cost = this.buildCost(fi, roomId);
@@ -271,6 +274,7 @@ export class DungeonSystem {
     const rd = ROOMS[roomId];
     if (!this.isRoomUnlocked(roomId)) return { ok: false, reason: `Verrouillé (${this.unlockText(roomId)})` };
     if (rd.maxPerFloor && this.countRooms(roomId, fi) >= rd.maxPerFloor) return { ok: false, reason: `Maximum ${rd.maxPerFloor} par étage` };
+    if (rd.maxTotal && this.countRooms(roomId) >= rd.maxTotal) return { ok: false, reason: `Maximum ${rd.maxTotal} dans tout le donjon` };
     const cells = { ...this.floor(fi).cells };
     delete cells[cellKey(x, y)];
     const ruleErr = this.checkRules(fi, x, y, roomId, cells);
@@ -381,6 +385,153 @@ export class DungeonSystem {
     return { ok: true, floor: this.floors.length - 1 };
   }
 
+  // ------------------------------------------------------------------ synergies (V2)
+  matchRoomTag(tag, roomId) {
+    const rd = ROOMS[roomId];
+    if (!rd) return false;
+    if (tag === '@any') return true;
+    if (tag === '@monster') return rd.capacity > 0 && !rd.special;
+    if (tag === '@elemental') return !!rd.roomElement;
+    return tag === roomId;
+  }
+
+  /**
+   * Synergies actives de la salle (x,y). `cells` permet de tester une configuration hypothétique
+   * (aperçu avant construction). Retourne [{ syn, partner: {x,y} | null }].
+   */
+  synergiesAt(fi, x, y, cells = this.floor(fi)?.cells) {
+    const cell = cells?.[cellKey(x, y)];
+    if (!cell) return [];
+    const out = [];
+    for (const syn of ROOM_SYNERGIES) {
+      if (!this.matchRoomTag(syn.room, cell.room)) continue;
+      if (syn.trap) {
+        if (!cell.trap) continue;
+        const el = TRAPS[cell.trap.id]?.element;
+        if (syn.trap === 'any' || el === syn.trap) out.push({ syn, partner: null });
+        continue;
+      }
+      if (!syn.with) {
+        out.push({ syn, partner: null });
+        continue;
+      }
+      for (const [dx, dy] of DIRS4) {
+        const n = cells[cellKey(x + dx, y + dy)];
+        if (n && this.matchRoomTag(syn.with, n.room)) {
+          out.push({ syn, partner: { x: x + dx, y: y + dy } });
+          break;
+        }
+      }
+    }
+    return out;
+  }
+
+  /** Effets cumulés des synergies d'une salle. */
+  roomEffects(fi, x, y, cells) {
+    const eff = { prod: 0, hp: 0, atk: 0, def: 0, xp: 0, reward: 0, trapPower: 0, mods: [], elements: [], onCombat: [], list: [] };
+    const power = 1 + (this.game.mods.get().synergyPower || 0);
+    for (const { syn, partner } of this.synergiesAt(fi, x, y, cells)) {
+      const e = syn.effect;
+      for (const k of ['prod', 'hp', 'atk', 'def', 'xp', 'reward', 'trapPower']) if (e[k]) eff[k] += e[k] * power;
+      if (e.mods) eff.mods.push(e.mods);
+      if (e.element) eff.elements.push(e.element);
+      if (e.onCombat) eff.onCombat.push(...e.onCombat);
+      eff.list.push({ syn, partner });
+    }
+    return eff;
+  }
+
+  /** Toutes les synergies actives d'un étage (affichage). */
+  floorSynergies(fi) {
+    const out = [];
+    for (const r of this.roomCells(fi)) for (const s of this.synergiesAt(fi, r.x, r.y)) out.push({ x: r.x, y: r.y, ...s });
+    return out;
+  }
+
+  /** Synergies que gagnerait une salle `roomId` construite en (x,y) (aperçu). */
+  previewSynergies(fi, x, y, roomId) {
+    const cells = { ...this.floor(fi).cells, [cellKey(x, y)]: { room: roomId, level: 1, trap: null } };
+    const own = this.synergiesAt(fi, x, y, cells).map((s) => ({ ...s, x, y }));
+    const before = new Set(this.floorSynergies(fi).map((s) => `${s.x},${s.y},${s.syn.id}`));
+    const others = [];
+    for (const [dx, dy] of DIRS4) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!cells[cellKey(nx, ny)]) continue;
+      for (const s of this.synergiesAt(fi, nx, ny, cells)) if (!before.has(`${nx},${ny},${s.syn.id}`)) others.push({ ...s, x: nx, y: ny });
+    }
+    return [...own, ...others];
+  }
+
+  /** Multiplicateur d'XP d'un monstre selon sa salle (synergies). */
+  xpMultAt(m) {
+    const loc = m?.location;
+    if (!loc || !this.cell(loc.floor, loc.x, loc.y)) return 1;
+    return 1 + this.roomEffects(loc.floor, loc.x, loc.y).xp;
+  }
+
+  /** Niveaux ajoutés aux aventuriers par les salles à risque (Chambre maudite). */
+  floorDanger(fi) {
+    let d = 0;
+    for (const r of this.roomCells(fi)) d += ROOMS[r.cell.room]?.danger || 0;
+    return d;
+  }
+
+  /** Bonus de récompenses des modes de jeu (Salle des portails). */
+  runRewardBonus() {
+    let b = 0;
+    for (let fi = 0; fi < this.floors.length; fi++) {
+      for (const r of this.roomCells(fi)) {
+        const rd = ROOMS[r.cell.room];
+        if (rd.runReward) b += rd.runReward * (1 + 0.02 * (r.cell.level - 1));
+      }
+    }
+    return b;
+  }
+
+  hasPerk(perk) {
+    return this.floors.some((_, fi) => this.roomCells(fi).some((r) => ROOMS[r.cell.room]?.perk === perk));
+  }
+
+  /** Bonus globaux des salles (Salle du maître), lus par ModifierSystem. */
+  globalRoomMods() {
+    const out = {};
+    for (let fi = 0; fi < this.floors.length; fi++) {
+      for (const r of this.roomCells(fi)) {
+        const g = ROOMS[r.cell.room]?.globalMods;
+        if (!g) continue;
+        const lv = 1 + 0.04 * (r.cell.level - 1);
+        for (const [k, v] of Object.entries(g)) out[k] = (out[k] || 0) + v * lv;
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Salle d'entraînement : XP passive des monstres placés. `seconds` peut être long (hors ligne).
+   * Retourne le nombre de niveaux gagnés.
+   */
+  trainTick(seconds) {
+    let ups = 0;
+    for (const m of this.game.state.monsters) {
+      const loc = m.location;
+      if (!loc) continue;
+      const cell = this.cell(loc.floor, loc.x, loc.y);
+      const rd = cell && ROOMS[cell.room];
+      if (!rd?.trainingXp) continue;
+      if (m.level >= this.game.monsters.maxLevel(m)) continue;
+      const rate = rd.trainingXp * (1 + 0.02 * (cell.level - 1)) * this.xpMultAt(m) * (1 + (this.game.mods.get().xpGain || 0));
+      // XP par minute = fraction de l'XP du niveau suivant (recalculée à chaque palier pour les longues absences)
+      let left = seconds;
+      while (left > 0 && m.level < this.game.monsters.maxLevel(m)) {
+        const step = Math.min(left, 600);
+        ups += this.game.monsters.addXp(m, (this.game.monsters.xpToNext(m) * rate * step) / 60);
+        left -= step;
+      }
+    }
+    return ups;
+  }
+
   // ------------------------------------------------------------------ production & bonus
   productionPerMin(fi = null) {
     const out = {};
@@ -390,8 +541,13 @@ export class DungeonSystem {
       for (const r of this.roomCells(i)) {
         const rd = ROOMS[r.cell.room];
         if (!rd.production) continue;
+        const syn = 1 + this.roomEffects(i, r.x, r.y).prod;
         const lvl = Math.pow(1.15, r.cell.level - 1) * Math.pow(floorEconomyScale(i + 1), 0.6);
-        for (const [k, v] of Object.entries(rd.production)) out[k] = (out[k] || 0) + v * lvl * prod;
+        for (const [k, v] of Object.entries(rd.production)) {
+          // Les monnaies rares ne suivent pas l'économie de l'étage
+          const scale = k === 'dimensionalFragments' || k === 'legendaryEssence' ? 1 + 0.02 * (r.cell.level - 1) : lvl;
+          out[k] = (out[k] || 0) + v * scale * prod * syn;
+        }
       }
     }
     return out;
@@ -402,6 +558,7 @@ export class DungeonSystem {
     for (const r of this.roomCells(fi)) {
       const rd = ROOMS[r.cell.room];
       if (rd.rewardBonus) b += rd.rewardBonus + (rd.rewardPerLevel || 0) * (r.cell.level - 1);
+      b += this.roomEffects(fi, r.x, r.y).reward;
     }
     return b;
   }

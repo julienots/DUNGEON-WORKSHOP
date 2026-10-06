@@ -12,7 +12,8 @@ export class AdventurerSystem {
 
   partyLevel(floorNumber, threat) {
     const d = floorDef(floorNumber);
-    return Math.max(1, Math.round(d.level + threat * ECONOMY.raid.threatLevelFactor));
+    const danger = this.game?.dungeon?.floor(floorNumber - 1) ? this.game.dungeon.floorDanger(floorNumber - 1) : 0;
+    return Math.max(1, Math.round(d.level + threat * ECONOMY.raid.threatLevelFactor + danger));
   }
 
   partySize(floorNumber, rng, threat = 0) {

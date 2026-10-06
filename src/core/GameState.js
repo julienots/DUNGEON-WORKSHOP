@@ -81,7 +81,7 @@ export function createNewState(now = Date.now(), startMult = 1) {
     },
     stats: createStats(),
     lifetime: { goldEarned: 0, adventurersKilled: 0 },
-    bosses: { defeated: {}, lastRepeat: {}, eventLast: {} },
+    bosses: { defeated: {}, lastRepeat: {}, eventLast: {}, arenaLast: {} },
     shop: { lastFreeChest: 0, basicSummons: 0, equipChests: 0 },
     settings: { music: true, sfx: true, musicVolume: 0.5, sfxVolume: 0.8, quality: 'high', vibration: true, speed: 1, notifications: true, performanceMode: false },
     meta: {},

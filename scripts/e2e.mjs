@@ -297,7 +297,9 @@ try {
     record('Migration V1 → V2 (sauvegarde réelle)', ok && errors.length === 0, `${JSON.stringify(info)} ${errors.join(' | ').slice(0, 200)}`);
 
     // -------------------------------------------------------------- 10. Modes de jeu
-    await page.tap('[data-hud="modes"]', { force: true });
+    // Le rapport « pendant votre absence » peut s'afficher par-dessus : on le ferme d'abord
+    await page.evaluate(() => window.__DW.ctx.ui.modals.closeAll());
+    await page.evaluate(() => document.querySelector('[data-hud="modes"]').click());
     await page.waitForSelector('.mode-card', { timeout: 10000 });
     const cards = await page.$$eval('.mode-card', (els) => els.length);
     await page.evaluate(() => [...document.querySelectorAll('.mode-card')].find((b) => b.textContent.includes('Survie')).click());

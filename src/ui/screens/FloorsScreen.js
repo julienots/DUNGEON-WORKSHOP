@@ -38,6 +38,11 @@ export function showFloors() {
     // Gardien bloquant
     const gate = g.bosses.floorBosses().filter((b) => !b.defeated || b.repeatAvailable);
     for (const b of g.bosses.floorBosses()) wrap.appendChild(bossCard(b, () => ctx.ui.modals.close(entry)));
+    const arena = g.bosses.arenaBosses();
+    if (arena.length) {
+      wrap.appendChild(h('h3.section-title', '🏟️ Arène des boss'));
+      for (const b of arena) wrap.appendChild(bossCard(b, () => ctx.ui.modals.close(entry)));
+    }
     if (!gate.length && !g.bosses.floorBosses().length) {
       const upcoming = [5, 10, 15, 20, 30, 40, 50].find((n) => n > g.state.floors.length);
       if (upcoming) wrap.appendChild(h('div.muted.small.center', `👑 Prochain gardien à l’étage ${upcoming}.`));
@@ -77,9 +82,9 @@ export function showFloors() {
 export function bossCard(b, onClose) {
   const g = ctx.game;
   const rec = g.bosses.recommendedPower(b);
-  const status = b.event ? (b.available ? 'Disponible aujourd’hui' : 'Revenez demain') : b.defeated ? (b.repeatAvailable ? 'Vaincu · récompense quotidienne disponible' : 'Vaincu · revenez demain') : `Garde l’accès à l’étage ${b.floor + 1}`;
-  const can = b.event ? b.available : !b.defeated || b.repeatAvailable;
-  const reward = b.event ? (b.firstDone ? b.boss.rewards.repeat : b.boss.rewards.first) : b.defeated ? b.boss.rewards.repeat : b.boss.rewards.first;
+  const status = b.arena ? (b.available ? 'Arène : un combat récompensé par jour' : 'Arène : revenez demain') : b.event ? (b.available ? 'Disponible aujourd’hui' : 'Revenez demain') : b.defeated ? (b.repeatAvailable ? 'Vaincu · récompense quotidienne disponible' : 'Vaincu · revenez demain') : `Garde l’accès à l’étage ${b.floor + 1}`;
+  const can = b.event || b.arena ? b.available : !b.defeated || b.repeatAvailable;
+  const reward = b.event || b.arena ? (b.firstDone ? b.boss.rewards.repeat : b.boss.rewards.first) : b.defeated ? b.boss.rewards.repeat : b.boss.rewards.first;
   const res = Object.fromEntries(Object.entries(reward).filter(([k]) => !['artifact', 'species'].includes(k)));
   return h(`div.boss-card${can ? '' : '.done'}`,
     h('img.boss-img', { src: SpriteFactory.url(`boss_${b.boss.id}`), alt: '' }),

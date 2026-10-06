@@ -44,6 +44,18 @@ export class BossSystem {
     return { key: `event:${ev.boss}`, boss, tier: 0, level, event: ev, available: this.game.events.eventBossAvailable(), firstDone: !!this.game.state.bosses.defeated[`event:${ev.boss}`] };
   }
 
+  /** Arène des boss (V2) : les boss d'événement peuvent être affrontés une fois par jour. */
+  arenaBosses() {
+    if (!this.game.dungeon.hasPerk('arena')) return [];
+    const bs = this.game.state.bosses;
+    bs.arenaLast = bs.arenaLast || {};
+    const level = floorDef(this.game.state.floors.length).level + 3;
+    return Object.values(BOSSES).filter((b) => b.event).map((boss) => ({
+      key: `arena:${boss.id}`, boss, tier: 0, level, arena: true,
+      available: bs.arenaLast[boss.id] !== dayKey(), firstDone: !!bs.defeated[`arena:${boss.id}`],
+    }));
+  }
+
   bossUnit(boss, level, tier = 0, depth = 1) {
     const lm = levelMult('boss', level) * (1 + tier * 0.6) * depth;
     return makeUnit({
@@ -65,7 +77,11 @@ export class BossSystem {
     const team = teamUids.map((u) => g.monsters.get(u)).filter(Boolean).slice(0, BOSS_TEAM_SIZE);
     if (!team.length) return { ok: false, reason: 'Choisissez au moins un monstre.' };
     let entry;
-    if (key.startsWith('event:')) {
+    if (key.startsWith('arena:')) {
+      entry = this.arenaBosses().find((b) => b.key === key);
+      if (!entry) return { ok: false, reason: 'Construisez une Arène des boss.' };
+      if (!entry.available) return { ok: false, reason: 'Déjà affronté aujourd’hui dans l’arène.' };
+    } else if (key.startsWith('event:')) {
       entry = this.eventBoss();
       if (!entry || entry.key !== key) return { ok: false, reason: 'Événement terminé' };
       if (!entry.available) return { ok: false, reason: 'Déjà affronté aujourd’hui. Revenez demain !' };
@@ -103,7 +119,8 @@ export class BossSystem {
       g.master.addXp(100 * entry.level);
     }
     // Une récompense par jour (la première victoire compte pour aujourd'hui). Les défaites peuvent être retentées.
-    if (win && entry.event) bs.eventLast[entry.boss.id] = dayKey();
+    if (win && entry.arena) (bs.arenaLast = bs.arenaLast || {})[entry.boss.id] = dayKey();
+    else if (win && entry.event) bs.eventLast[entry.boss.id] = dayKey();
     else if (win) bs.lastRepeat[key] = dayKey();
     // XP pour l'équipe, même en cas de défaite
     const xp = Math.round(30 * entry.level * (win ? 2 : 0.5) * (1 + (m.xpGain || 0)));
@@ -116,7 +133,8 @@ export class BossSystem {
 
   grant(reward, entry) {
     const g = this.game;
-    const scale = 1 + (entry.tier || 0) * 1.5;
+    // Arène des boss : +20% de récompenses sur tous les combats de boss
+    const scale = (1 + (entry.tier || 0) * 1.5) * (g.dungeon.hasPerk('arena') ? 1.2 : 1);
     const res = {};
     const out = {};
     for (const [k, v] of Object.entries(reward)) {

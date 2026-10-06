@@ -156,6 +156,8 @@ export class RunSystem {
       }
     }
     r.sideMods.A.healMult = r.healMult;
+    // Salle des portails : bonus de récompenses des modes
+    r.reward += this.game.dungeon.runRewardBonus();
     return r;
   }
 

@@ -66,10 +66,38 @@ export class DungeonScene extends Phaser.Scene {
     bus.on('stateLoaded', () => this.changeFloor(this.g.viewFloor, true), this);
     bus.on('sheetChanged', () => this.refit(), this);
 
+    // Zoom / déplacement (V2) : pincement à deux doigts, glisser, molette, boutons du HUD
+    this.zoom = 1;
     this.input.on('pointerdown', (p) => {
       this.downAt = { x: p.x, y: p.y, t: p.downTime };
+      this.dragFrom = { x: p.x, y: p.y };
+      this.dragging = false;
+      const ps = this.activePointers();
+      if (ps.length >= 2) {
+        this.pinch = { d: this.pointerDist(ps), z: this.zoom };
+        this.downAt = null;
+      }
     });
-    this.input.on('pointerup', (p) => this.onPointerUp(p));
+    this.input.on('pointermove', (p) => this.onPointerMove(p));
+    this.input.on('pointerup', (p) => {
+      if (this.pinch && this.activePointers().length < 2) {
+        this.pinch = null;
+        this.downAt = null;
+        return;
+      }
+      if (this.dragging) {
+        this.dragging = false;
+        this.downAt = null;
+        return;
+      }
+      this.onPointerUp(p);
+    });
+    this.input.on('wheel', (p, objs, dx, dy) => this.setZoom(this.zoom * (dy > 0 ? 0.9 : 1.1), p.x, p.y));
+    bus.on('hud:zoom', (dir) => {
+      const { width, height } = this.scale;
+      if (dir === 0) this.setZoom(1);
+      else this.setZoom(this.zoom * (dir > 0 ? 1.35 : 1 / 1.35), width / 2, height / 2);
+    }, this);
 
     this.scale.on('resize', this.onResize, this);
     this.events.on('wake', this.onWake, this);
@@ -109,6 +137,80 @@ export class DungeonScene extends Phaser.Scene {
     if (this.T !== prev || this.y0 !== prevY) this.rebuildNow();
   }
 
+  // ------------------------------------------------------------------ zoom & déplacement
+  activePointers() {
+    return this.input.manager.pointers.filter((pt) => pt.isDown);
+  }
+
+  pointerDist(ps) {
+    return Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y);
+  }
+
+  onPointerMove(p) {
+    if (!p.isDown) return;
+    const ps = this.activePointers();
+    if (this.pinch && ps.length >= 2) {
+      const mx = (ps[0].x + ps[1].x) / 2;
+      const my = (ps[0].y + ps[1].y) / 2;
+      this.setZoom(this.pinch.z * (this.pointerDist(ps) / Math.max(1, this.pinch.d)), mx, my);
+      return;
+    }
+    if (!this.dragFrom || this.zoom <= 1.001) return;
+    const dx = p.x - this.dragFrom.x;
+    const dy = p.y - this.dragFrom.y;
+    if (!this.dragging && Math.hypot(dx, dy) < 12 * this.S) return;
+    this.dragging = true;
+    const cam = this.cameras.main;
+    cam.scrollX -= dx / this.zoom;
+    cam.scrollY -= dy / this.zoom;
+    this.dragFrom = { x: p.x, y: p.y };
+    this.clampCamera();
+  }
+
+  /** Zoom (1 = vue d'ensemble) en gardant le point (fx, fy) de l'écran fixe. */
+  setZoom(z, fx = null, fy = null) {
+    const cam = this.cameras.main;
+    const nz = Phaser.Math.Clamp(z, 1, 2.6);
+    if (fx !== null) {
+      const before = cam.getWorldPoint(fx, fy);
+      cam.setZoom(nz);
+      cam.preRender();
+      const after = cam.getWorldPoint(fx, fy);
+      cam.scrollX += before.x - after.x;
+      cam.scrollY += before.y - after.y;
+    } else cam.setZoom(nz);
+    this.zoom = nz;
+    if (nz <= 1.001) cam.setScroll(0, 0);
+    this.clampCamera();
+    this.g.bus.emit('dungeonZoom', nz);
+  }
+
+  /** La vue zoomée reste sur la grille. */
+  clampCamera() {
+    const cam = this.cameras.main;
+    const f = this.g.dungeon.floor(this.fi);
+    if (!f || this.zoom <= 1.001) {
+      cam.setScroll(0, 0);
+      return;
+    }
+    const { width: W, height: H } = this.scale;
+    const hw = W / (2 * this.zoom);
+    const hh = H / (2 * this.zoom);
+    const gx0 = this.x0 - this.T * 0.5;
+    const gx1 = this.x0 + f.cols * this.T + this.T * 0.5;
+    const gy0 = this.y0 - this.T;
+    const gy1 = this.y0 + f.rows * this.T + this.T * 0.5;
+    const clamp = (c, a, b, mid) => (a > b ? mid : Phaser.Math.Clamp(c, a, b));
+    const cx = clamp(cam.scrollX + W / 2, Math.min(gx0 + hw, W / 2), Math.max(gx1 - hw, W / 2), W / 2);
+    const cy = clamp(cam.scrollY + H / 2, Math.min(gy0 + hh, H / 2), Math.max(gy1 - hh, H / 2), H / 2);
+    cam.setScroll(cx - W / 2, cy - H / 2);
+  }
+
+  /** Coordonnées monde d'un point de l'écran. */
+  worldPoint(p) {
+    return this.cameras.main.getWorldPoint(p.x, p.y);
+  }
+
   // ------------------------------------------------------------------ fond
   buildBackground() {
     const { width, height } = this.scale;
@@ -121,6 +223,7 @@ export class DungeonScene extends Phaser.Scene {
     this.bgNear = this.add.tileSprite(0, 0, width, height, `bg_${theme}`).setOrigin(0).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD);
     this.bgNear.tileScaleX = this.bgNear.tileScaleY = 3.5 * this.S;
     this.vignette = this.add.image(width / 2, height / 2, 'vignette').setDisplaySize(width * 1.15, height * 1.1).setAlpha(0.75).setDepth(900);
+    for (const o of [this.bgFar, this.bgNear, this.vignette]) o.setScrollFactor(0);
     this.bgLayer.add([this.bgFar, this.bgNear]);
     this.overLayer.removeAll(true);
     // Poussières flottantes
@@ -132,6 +235,7 @@ export class DungeonScene extends Phaser.Scene {
         scale: { start: 0.6 * this.S, end: 0.1 }, alpha: { start: 0, end: 0.7, ease: 'Sine.easeInOut' },
         tint: this.themeLight(), frequency: 220, blendMode: 'ADD',
       });
+      this.dust.setScrollFactor(0);
       this.overLayer.add(this.dust);
     }
   }
@@ -186,11 +290,13 @@ export class DungeonScene extends Phaser.Scene {
     this.endRaidVisuals(true);
     this.layout();
     this.buildGrid();
+    this.clampCamera();
     this.syncRaid();
   }
 
   changeFloor(fi, force = false) {
     if (fi === this.fi && !force) return;
+    if (fi !== this.fi) this.setZoom(1);
     this.fi = fi;
     this.endRaidVisuals(true);
     this.setMode('view');
@@ -277,6 +383,7 @@ export class DungeonScene extends Phaser.Scene {
       lava: [0xff6a2b, 0.45], core: [0xffcc33, 0.35], dimensional: [0xff5ce1, 0.5], toxic: [0x8fe04a, 0.3],
       frozen: [0x9fe6ff, 0.3], lab: [0x3cf2d0, 0.3], storm: [0xffe14d, 0.3], sanctum: [0xfff3b0, 0.35], entrance: [0xffb060, 0.3],
       crypt: [0x9b6bff, 0.3], forge: [0xff9c4a, 0.35], grove: [0x6bff8a, 0.22], treasure: [0xffcc33, 0.3], combat: [0xff7040, 0.3], basic: [0xffb060, 0.3],
+      training: [0xffb060, 0.28], mutation: [0x7affc0, 0.4], arena: [0xffd84a, 0.3], cursed: [0xff2040, 0.45], portal: [0x7a8aff, 0.5], master: [0xffe08a, 0.4],
     };
     const l = lights[cell.room];
     if (l && this.g.state.settings.quality !== 'low') {
@@ -284,9 +391,21 @@ export class DungeonScene extends Phaser.Scene {
       this.tweens.add({ targets: glow, alpha: l[1] * 0.55, duration: 900 + Math.random() * 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       this.ambient.push({ room: cell.room, x: c.x, y: c.y });
     }
+    if (cell.room === 'portal') {
+      const ring = add(this.add.image(c.x, c.y - T * 0.04, 'p_ring').setDisplaySize(T * 0.5, T * 0.62).setTint(0x9fb0ff).setBlendMode(Phaser.BlendModes.ADD), base + 4);
+      this.tweens.add({ targets: ring, angle: -360, duration: 5000, repeat: -1 });
+    }
     if (cell.room === 'dimensional') {
       const ring = add(this.add.image(c.x, c.y, 'p_ring').setDisplaySize(T * 0.6, T * 0.6).setTint(0xff5ce1).setBlendMode(Phaser.BlendModes.ADD), base + 4);
       this.tweens.add({ targets: ring, angle: 360, duration: 4000, repeat: -1 });
+    }
+    // Synergies actives (V2)
+    const synCount = this.g.dungeon.synergiesAt(this.fi, x, y).length;
+    if (synCount) {
+      const st = add(this.add.text(c.x - T / 2 + 4 * S, c.y - T / 2 + 2 * S, synCount > 1 ? `⭐${synCount}` : '⭐', {
+        fontFamily: FONT_BODY, fontStyle: 'bold', fontSize: `${Math.round(T * 0.15)}px`, color: '#ffe14d', stroke: '#1b1216', strokeThickness: 3 * S,
+      }).setOrigin(0, 0), base + 31);
+      st.setShadow(0, 1 * S, '#000', 3 * S, true, true);
     }
     // Niveau de la salle
     if (!rd.special) {
@@ -356,6 +475,7 @@ export class DungeonScene extends Phaser.Scene {
   // ------------------------------------------------------------------ modes et surbrillances
   setMode(mode) {
     this.mode = mode;
+    this.previewAt = null;
     if (mode !== 'build') this.buildSel = null;
     if (mode !== 'move') this.moveFrom = null;
     this.applyModeHighlights();
@@ -364,6 +484,7 @@ export class DungeonScene extends Phaser.Scene {
 
   setBuildMode(sel) {
     this.buildSel = sel;
+    this.previewAt = null;
     this.mode = sel ? 'build' : 'view';
     this.applyModeHighlights();
   }
@@ -400,7 +521,26 @@ export class DungeonScene extends Phaser.Scene {
           if (f.cells[cellKey(x, y)]) continue;
           if (!this.g.dungeon.hasRoomNeighbor(this.fi, x, y)) continue;
           const ok = this.g.dungeon.canBuild(this.fi, x, y, this.buildSel.id);
-          mark(x, y, ok.ok ? 0x6bff8a : 0xff5a5a, ok.ok ? '+' : '✕');
+          const syn = ok.ok ? this.g.dungeon.previewSynergies(this.fi, x, y, this.buildSel.id).length : 0;
+          mark(x, y, ok.ok ? (syn ? 0xffd84a : 0x6bff8a) : 0xff5a5a, ok.ok ? (syn ? '⭐' : '+') : '✕');
+        }
+      }
+      // Aperçu : salle fantôme + liens de synergie
+      const pv = this.previewAt;
+      if (pv && pv.id === this.buildSel.id) {
+        const c = this.cellCenter(pv.x, pv.y);
+        const ghost = this.add.image(c.x, c.y, `floor_${pv.id}`).setDisplaySize(T * 0.92, T * 0.92).setAlpha(0.75).setDepth(2502);
+        const sel = this.add.image(c.x, c.y, 'cell_select').setDisplaySize(T, T).setTint(0xffd84a).setDepth(2503);
+        this.tweens.add({ targets: [ghost, sel], alpha: 0.4, duration: 500, yoyo: true, repeat: -1 });
+        this.highlights.push(ghost, sel);
+        for (const s of this.g.dungeon.previewSynergies(this.fi, pv.x, pv.y, pv.id)) {
+          const other = s.x === pv.x && s.y === pv.y ? s.partner : { x: s.x, y: s.y };
+          if (!other) continue;
+          const o = this.cellCenter(other.x, other.y);
+          const line = this.add.line(0, 0, c.x, c.y, o.x, o.y, 0xffe14d, 0.9).setOrigin(0).setLineWidth(4 * this.S).setDepth(2504);
+          const star = this.add.text((c.x + o.x) / 2, (c.y + o.y) / 2, '⭐', { fontSize: `${Math.round(T * 0.28)}px` }).setOrigin(0.5).setDepth(2505);
+          this.tweens.add({ targets: star, scale: 1.25, duration: 450, yoyo: true, repeat: -1 });
+          this.highlights.push(line, star);
         }
       }
     } else if (this.mode === 'build' && this.buildSel?.type === 'trap') {
@@ -447,7 +587,8 @@ export class DungeonScene extends Phaser.Scene {
     this.downAt = null;
     if (moved > 18 * this.S) return;
     if (ctx.ui.modals.isOpen()) return;
-    const { x, y } = this.toCell(p.x, p.y);
+    const wp = this.worldPoint(p);
+    const { x, y } = this.toCell(wp.x, wp.y);
     const f = this.g.dungeon.floor(this.fi);
     if (x < 0 || y < 0 || x >= f.cols || y >= f.rows) {
       if (this.selected) {
@@ -460,9 +601,17 @@ export class DungeonScene extends Phaser.Scene {
     const cell = f.cells[cellKey(x, y)];
     if (this.mode === 'build' && this.buildSel) {
       if (this.buildSel.type === 'room' && !cell) {
-        const res = this.g.dungeon.build(this.fi, x, y, this.buildSel.id);
-        this.feedback(res, x, y, `${ROOMS[this.buildSel.id].icon} Construit !`);
-        if (res.ok) this.fx.buildPuff(this.cellCenter(x, y), this.T);
+        // Premier toucher : aperçu (synergies, coût). Second toucher sur la même case : construction.
+        const pv = this.previewAt;
+        if (pv && pv.x === x && pv.y === y && pv.id === this.buildSel.id) return this.confirmBuild(x, y);
+        if (!this.g.dungeon.hasRoomNeighbor(this.fi, x, y)) {
+          ctx.ui.toasts.show('Creusez à côté d’une salle existante.', { icon: '⛏️', duration: 1600 });
+          return;
+        }
+        sfx('click');
+        this.previewAt = { x, y, id: this.buildSel.id };
+        this.applyModeHighlights();
+        ctx.ui.hud.showPreview(this.fi, x, y, this.buildSel.id);
         return;
       }
       if (this.buildSel.type === 'trap' && cell) {
@@ -493,6 +642,19 @@ export class DungeonScene extends Phaser.Scene {
       ctx.ui.toasts.show('Creusez à côté d’une salle existante.', { icon: '⛏️', duration: 1600 });
       this.selected = null;
       this.applyModeHighlights();
+    }
+  }
+
+  confirmBuild(x, y) {
+    if (!this.buildSel || this.buildSel.type !== 'room') return;
+    const res = this.g.dungeon.build(this.fi, x, y, this.buildSel.id);
+    this.feedback(res, x, y, `${ROOMS[this.buildSel.id].icon} Construit !`);
+    if (res.ok) {
+      this.fx.buildPuff(this.cellCenter(x, y), this.T);
+      const syn = this.g.dungeon.synergiesAt(this.fi, x, y);
+      if (syn.length) this.time.delayedCall(250, () => this.fx.floatText(this.cellCenter(x, y).x, this.cellCenter(x, y).y - this.T * 0.6, `⭐ ${syn.map((s) => s.syn.name).join(' · ')}`, '#ffe14d', 1.1));
+      this.previewAt = null;
+      ctx.ui.hud.clearPreview();
     }
   }
 

@@ -72,7 +72,7 @@ export class OfflineSystem {
         for (const [c, k] of Object.entries(res.killsByClass)) killsByClass[c] = (killsByClass[c] || 0) + k;
         for (const uid of res.participants) {
           const m = g.monsters.get(uid);
-          xpByMonster[uid] = (xpByMonster[uid] || 0) + res.xpEach * scale * (m ? xpLevelFactor(m.level, res.party.level) : 1);
+          xpByMonster[uid] = (xpByMonster[uid] || 0) + res.xpEach * (res.xpBonus?.[uid] || 1) * scale * (m ? xpLevelFactor(m.level, res.party.level) : 1);
         }
       }
       const raidsWon = Math.round(wins * (n / samples));
@@ -118,6 +118,8 @@ export class OfflineSystem {
       report.monstersXp++;
       report.levelUps += g.monsters.addXp(m, Math.round(xp));
     }
+    // Salles d'entraînement (V2)
+    report.levelUps += g.dungeon.trainTick(seconds * O.efficiency);
 
     if (losses > 0) {
       const t = g.state.treasury;

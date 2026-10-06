@@ -62,6 +62,7 @@ export class RaidSystem {
     const trapReady = {};
     const participants = new Set();
     const deadMonsters = [];
+    const xpBonus = {};
     let outcome = null;
     const heroesAlive = () => heroes.some((h) => h.alive);
 
@@ -96,14 +97,17 @@ export class RaidSystem {
         cleared.add(key);
         const mons = g.monsters.monstersAt(fi, x, y);
         if (mons.length) {
-          const room = { roomId: cell.room, level: cell.level };
+          const eff = g.dungeon.roomEffects(fi, x, y);
+          const room = { roomId: cell.room, level: cell.level, eff };
           const units = mons.map((m) => makeUnit(g.monsters.toUnit(m, room)));
+          if (eff.list.length) battle.stats.synergyTriggers += eff.list.length;
+          for (const m of mons) if (eff.xp) xpBonus[m.uid] = 1 + eff.xp;
           battle.units = heroes.concat(units);
           battle.traps = [];
           if (trapDef) battle.addTrap({ ...trapDef, nextFire: trapReady[key] || 0 });
           const rd = ROOMS[cell.room];
           battle.emit({ type: 'combatStart', x, y });
-          battle.start(rd.onCombat || [], rd.allyStatuses || []);
+          battle.start([...(rd.onCombat || []), ...eff.onCombat], rd.allyStatuses || []);
           const res = battle.run(R.maxCombatTime);
           if (trapDef) trapReady[key] = battle.traps[0]?.nextFire || trapReady[key];
           for (const u of units) {
@@ -180,6 +184,7 @@ export class RaidSystem {
       participants: [...participants],
       deadMonsters,
       xpEach,
+      xpBonus,
       masterXp: Math.round(kills * RW.masterXpPerKill * (1 + fi * 0.5) * xpMult),
       battleStats: battle.stats,
     };
@@ -201,7 +206,7 @@ export class RaidSystem {
     let levelUps = 0;
     for (const uid of res.participants) {
       const m = g.monsters.get(uid);
-      if (m) levelUps += g.monsters.addXp(m, Math.round(res.xpEach * xpLevelFactor(m.level, res.party.level)));
+      if (m) levelUps += g.monsters.addXp(m, Math.round(res.xpEach * (res.xpBonus?.[uid] || 1) * xpLevelFactor(m.level, res.party.level)));
     }
     if (levelUps) g.bus.emit('monstersChanged');
     g.master.addXp(res.masterXp);

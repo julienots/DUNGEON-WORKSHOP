@@ -147,6 +147,18 @@ export class MonsterSystem {
           atk *= 1 + rd.elementBonus.atk * lvlMult;
         }
       }
+      // Synergies de salles (V2)
+      const eff = room.eff;
+      if (eff) {
+        hp *= 1 + eff.hp;
+        atk *= 1 + eff.atk;
+        def *= 1 + eff.def;
+        for (const e of eff.elements) {
+          if (e.element !== sp.element) continue;
+          hp *= 1 + (e.hp || 0);
+          atk *= 1 + (e.atk || 0);
+        }
+      }
     }
 
     // Traits (V2) : rendent chaque individu unique
@@ -157,7 +169,7 @@ export class MonsterSystem {
     spd *= 1 + tr.stats.spd;
 
     const passive = PASSIVES[sp.passive]?.mods || {};
-    const combined = mergeMods(passive, ...tr.mods, ...equipMods, flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
+    const combined = mergeMods(passive, ...tr.mods, ...equipMods, ...(room?.eff?.mods || []), flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
     return {
       hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), spd: +spd.toFixed(1), crit,
       mods: combined,

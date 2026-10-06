@@ -110,13 +110,17 @@ export class FxKit {
   banner(text, color = '#ffd27a') {
     const S = this.S;
     const { width } = this.scene.scale;
-    const y = (ctx.ui?.insets().top || 70) * S + 60 * S;
+    // Position écran convertie en coordonnées monde (la caméra du donjon peut être zoomée/déplacée)
+    const cam = this.scene.cameras.main;
+    const z = cam.zoom || 1;
+    const p = cam.getWorldPoint(width / 2, (ctx.ui?.insets().top || 70) * S + 60 * S);
+    const y = p.y;
     const t = this.getText();
-    t.setText(text).setFontSize(Math.round(26 * S)).setColor(color).setStroke('#1b1216', 7 * S).setPosition(width / 2, y).setDepth(6000).setAlpha(0).setScale(0.6);
+    t.setText(text).setFontSize(Math.round(26 * S)).setColor(color).setStroke('#1b1216', 7 * S).setPosition(p.x, y).setDepth(6000).setAlpha(0).setScale(0.6 / z);
     t.setWordWrapWidth(width * 0.9);
-    this.scene.tweens.add({ targets: t, alpha: 1, scale: 1, duration: 260, ease: 'Back.easeOut' });
+    this.scene.tweens.add({ targets: t, alpha: 1, scale: 1 / z, duration: 260, ease: 'Back.easeOut' });
     this.scene.tweens.add({
-      targets: t, alpha: 0, y: y - 20 * S, duration: 500, delay: 1800, onComplete: () => {
+      targets: t, alpha: 0, y: y - (20 * S) / z, duration: 500, delay: 1800, onComplete: () => {
         t.setWordWrapWidth(null);
         this.releaseText(t);
       },

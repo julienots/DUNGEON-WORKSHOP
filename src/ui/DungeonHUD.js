@@ -4,7 +4,7 @@ import { Button, IconButton } from './Button.js';
 import { Tabs } from './Card.js';
 import { RoomCard } from './RoomCard.js';
 import { SpriteFactory } from '../gfx/SpriteFactory.js';
-import { BUILDABLE_ROOMS } from '../data/rooms.js';
+import { BUILDABLE_ROOMS, ROOMS, ROOM_CATEGORIES } from '../data/rooms.js';
 import { TRAP_LIST } from '../data/traps.js';
 import { SPEEDS } from '../utils/constants.js';
 import { formatTime } from '../utils/format.js';
@@ -18,6 +18,7 @@ export class DungeonHUD {
     this.host = host;
     this.el = null;
     this.buildTab = 'rooms';
+    this.preview = null;
   }
 
   mount() {
@@ -43,7 +44,13 @@ export class DungeonHUD {
     this.watchBtn = h('button.hud-btn.watch-btn.hidden', { type: 'button', onclick: () => this.watch() }, '👁️', h('span', 'Regarder'));
     this.buildBtn = h('button.hud-btn.build-btn', { type: 'button', id: 'btn-build', onclick: () => this.toggleBuild() }, '🔨', h('span', 'Construire'));
     this.strip = h('div.raid-strip', this.raidInfo, h('div.strip-actions', this.watchBtn, this.speedBtn, this.buildBtn));
-    this.el = h('div.dungeon-hud', this.row, this.strip);
+    // Zoom de la grille (V2)
+    const zb = (label, dir, title) => h('button.zoom-btn', { type: 'button', title, 'aria-label': title, onclick: (e) => { e.stopPropagation(); sfx('click'); g.bus.emit('hud:zoom', dir); } }, label);
+    this.zoomReset = zb('⤢', 0, 'Vue d’ensemble');
+    this.zoomReset.classList.add('hidden');
+    this.zoomCtl = h('div.zoom-ctl', zb('＋', 1, 'Zoomer'), zb('－', -1, 'Dézoomer'), this.zoomReset);
+    g.bus.on('dungeonZoom', (z) => this.zoomReset.classList.toggle('hidden', z <= 1.001));
+    this.el = h('div.dungeon-hud', this.row, this.zoomCtl, this.strip);
     this.host.appendChild(this.el);
     this.updateSpeed();
     this.timer = setInterval(() => this.updateRaid(), 250);
@@ -175,23 +182,27 @@ export class DungeonHUD {
     const fi = g.viewFloor;
     const body = h('div.palette');
     const tabs = Tabs([
-      { id: 'rooms', icon: '🏗️', label: 'Salles' },
-      { id: 'traps', icon: '🧨', label: 'Pièges' },
+      ...Object.entries(ROOM_CATEGORIES).map(([id, c]) => ({ id, icon: c.icon, label: c.name })),
       { id: 'expand', icon: '📐', label: 'Agrandir' },
     ], this.buildTab, (id) => {
       this.buildTab = id;
       this.selection = null;
+      this.preview = null;
       g.bus.emit('hud:build', null);
       this.renderPalette();
     });
     body.appendChild(tabs);
     const hint = h('div.palette-hint');
     body.appendChild(hint);
+    if (this.preview) body.appendChild(this.renderPreview());
     const grid = h('div.palette-grid');
     body.appendChild(grid);
-    if (this.buildTab === 'rooms') {
-      hint.textContent = this.selection ? 'Touchez une case verte pour construire.' : 'Choisissez une salle, puis touchez une case libre à côté du donjon.';
-      const rooms = [...BUILDABLE_ROOMS].sort((a, b) => (g.dungeon.isRoomUnlocked(b.id) ? 1 : 0) - (g.dungeon.isRoomUnlocked(a.id) ? 1 : 0));
+    if (ROOM_CATEGORIES[this.buildTab] && this.buildTab !== 'traps') {
+      hint.textContent = this.selection
+        ? 'Touchez une case : aperçu des synergies (⭐), puis touchez à nouveau pour construire.'
+        : `${ROOM_CATEGORIES[this.buildTab].icon} ${ROOM_CATEGORIES[this.buildTab].name} — choisissez une salle.`;
+      const rooms = BUILDABLE_ROOMS.filter((r) => r.category === this.buildTab).sort((a, b) => (g.dungeon.isRoomUnlocked(b.id) ? 1 : 0) - (g.dungeon.isRoomUnlocked(a.id) ? 1 : 0));
+      if (!rooms.length) grid.appendChild(h('div.muted.small', 'Aucune salle dans cette catégorie pour l’instant.'));
       for (const r of rooms) {
         const unlocked = g.dungeon.isRoomUnlocked(r.id);
         grid.appendChild(RoomCard({
@@ -206,6 +217,7 @@ export class DungeonHUD {
             }
             sfx('click');
             this.selection = { type: 'room', id: r.id };
+            this.preview = null;
             g.bus.emit('hud:build', this.selection);
             this.renderPalette();
             ctx.ui.toasts.show(r.desc, { icon: r.icon, duration: 2200 });
@@ -276,6 +288,37 @@ export class DungeonHUD {
       });
       ctx.game.bus.on('dungeonChanged', this.refreshHook);
     }
+  }
+
+  /** Aperçu avant construction (appelé par la scène au premier toucher). */
+  showPreview(fi, x, y, roomId) {
+    this.preview = { fi, x, y, roomId };
+    if (this.building) this.renderPalette();
+  }
+
+  clearPreview() {
+    if (!this.preview) return;
+    this.preview = null;
+    if (this.building) this.renderPalette();
+  }
+
+  renderPreview() {
+    const g = ctx.game;
+    const { fi, x, y, roomId } = this.preview;
+    const rd = ROOMS[roomId];
+    const check = g.dungeon.canBuild(fi, x, y, roomId);
+    const syns = g.dungeon.previewSynergies(fi, x, y, roomId);
+    return h('div.build-preview',
+      h('div.build-preview-head', h('b', `${rd.icon} ${rd.name}`), h('span.small.muted', ` · case ${x + 1},${y + 1}`)),
+      syns.length
+        ? h('div.syn-list', syns.map((s) => h('div.syn-chip', { title: s.syn.desc }, h('span', s.syn.icon), h('span', s.syn.name), h('small', s.x === x && s.y === y ? '' : ` → ${ROOMS[g.dungeon.cell(fi, s.x, s.y)?.room]?.name || ''}`))))
+        : h('div.small.muted', 'Aucune synergie ici. Les ⭐ indiquent les meilleures cases.'),
+      h('div.row.gap',
+        Button('Construire', { variant: check.ok ? 'primary' : 'secondary', small: true, cost: check.cost || g.dungeon.buildCost(fi, roomId), disabled: !check.ok, onClick: () => this.scene()?.confirmBuild(x, y) }),
+        Button('Annuler', { small: true, variant: 'ghost', onClick: () => { this.clearPreview(); this.scene()?.applyModeHighlights(); } }),
+      ),
+      check.ok ? null : h('div.small.bad', check.reason),
+    );
   }
 
   // ------------------------------------------------------------------ cases
