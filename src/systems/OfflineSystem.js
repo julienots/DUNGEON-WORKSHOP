@@ -86,6 +86,8 @@ export class OfflineSystem {
       // Statistiques
       g.stats.add('raidsTotal', n);
       g.stats.add('raidsDefended', raidsWon);
+      const br = (g.state.stats.biomeRaids = g.state.stats.biomeRaids || {});
+      br[g.biomes.id(fi)] = (br[g.biomes.id(fi)] || 0) + raidsWon;
       g.stats.add('raidsLost', raidsLost);
       g.stats.add('adventurersKilled', kills);
       g.state.lifetime.adventurersKilled += kills;

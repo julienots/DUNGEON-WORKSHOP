@@ -222,6 +222,11 @@ export class RaidSystem {
 
     const st = g.stats;
     st.add('raidsTotal', 1);
+    if (res.outcome !== 'looted') {
+      const b = g.biomes.id(res.floor);
+      const br = (g.state.stats.biomeRaids = g.state.stats.biomeRaids || {});
+      br[b] = (br[b] || 0) + 1;
+    }
     st.add('adventurersKilled', res.kills);
     g.state.lifetime.adventurersKilled += res.kills;
     st.add('eliteKilled', res.eliteKills);

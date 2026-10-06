@@ -29,6 +29,8 @@ import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 import { BiomeSystem } from '../systems/BiomeSystem.js';
 import { CollectionSystem } from '../systems/CollectionSystem.js';
 import { PrestigeTierSystem } from '../systems/PrestigeTierSystem.js';
+import { SeasonSystem } from '../systems/SeasonSystem.js';
+import { EndgameSystem } from '../systems/EndgameSystem.js';
 
 /**
  * GAME CORE
@@ -66,6 +68,8 @@ export class Game {
     this.biomes = new BiomeSystem(this);
     this.collection = new CollectionSystem(this);
     this.tiers = new PrestigeTierSystem(this);
+    this.seasons = new SeasonSystem(this);
+    this.endgame = new EndgameSystem(this);
     this.progression = new ProgressionSystem(this);
 
     this.viewFloor = 0;
@@ -119,6 +123,7 @@ export class Game {
 
   afterLoad() {
     this.codex.syncOwned();
+    this.seasons.refresh();
     // Pages déjà méritées (sauvegardes V1) : débloquées en silence
     if (!this.state.codex.lore || !Object.keys(this.state.codex.lore).length) this.codex.checkLore(true);
     this.mods.invalidate();
@@ -194,7 +199,10 @@ export class Game {
       this.slowTimer = 0;
       this.research.update(now);
       if (this.dungeon.trainTick(1)) this.bus.emit('monstersChanged');
-      if (++this.loreTick % 5 === 0) this.codex.checkLore();
+      if (++this.loreTick % 5 === 0) {
+        this.codex.checkLore();
+        this.seasons.refresh(now);
+      }
       this.events.update(new Date(now));
       this.tutorial.update();
       if (this.achievementDirty) {

@@ -3124,3 +3124,18 @@ body.sheet-open .zoom-ctl { display: none; }
 .tier-orb { background: radial-gradient(circle, color-mix(in srgb, var(--mc) 70%, #fff), color-mix(in srgb, var(--mc) 35%, #000)) !important; box-shadow: 0 0 24px var(--mc); }
 .req-row { padding: 4px 0; font-size: 13px; color: var(--muted); }
 .req-row.good { color: var(--good); }
+
+/* ---------------------------------------------------------------- V2 : saison */
+.season { display: flex; flex-direction: column; gap: 10px; }
+.season-head { display: flex; gap: 12px; padding: 12px; border-radius: var(--radius); background: radial-gradient(ellipse at 0 0, color-mix(in srgb, var(--mc) 35%, transparent), rgba(0, 0, 0, 0.35) 70%); border: 1px solid color-mix(in srgb, var(--mc) 60%, transparent); }
+.season-icon { font-size: 44px; }
+.season-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.season-name { font-family: var(--font-title); font-size: 18px; color: var(--gold); }
+.season-track { display: flex; flex-direction: column; gap: 6px; }
+.season-tier { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--line-soft); }
+.season-tier.reached:not(.claimed) { border-color: var(--gold); box-shadow: 0 0 10px rgba(255, 204, 77, 0.3); }
+.season-tier.claimed { opacity: 0.6; }
+.st-num { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-title); font-weight: 700; background: rgba(255, 204, 77, 0.15); color: var(--gold); }
+.st-body { flex: 1; min-width: 0; }
+.season-reward { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.season-title { font-family: var(--font-title); color: var(--gold); }

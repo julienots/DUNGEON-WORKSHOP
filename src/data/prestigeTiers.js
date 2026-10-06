@@ -42,7 +42,7 @@ export const TIER_IDS = Object.keys(PRESTIGE_TIERS);
 /** Améliorations achetées avec la monnaie de chaque palier. */
 export const TIER_UPGRADES = {
   rebirth: [
-    { id: 'rb_start', name: 'Départ fulgurant', icon: '🚀', max: 5, cost: (l) => 1 + l, desc: '+1 étage de départ gratuit (salles de base) par niveau… et ressources ×3.', effects: [{ mod: 'startingResources', value: 1 }] },
+    { id: 'rb_start', name: 'Départ fulgurant', icon: '🚀', max: 5, cost: (l) => 1 + l, desc: 'Ressources de départ ×2 par niveau après chaque Ascension.', effects: [{ mod: 'startingResources', value: 1 }] },
     { id: 'rb_essence', name: 'Flamme intérieure', icon: '🔥', max: 10, cost: (l) => 1 + l, desc: '+20 % d’Essence du Maître gagnée par niveau.', effects: [{ mod: 'masterEssenceGain', value: 0.2 }] },
     { id: 'rb_monsters', name: 'Sang renouvelé', icon: '❤️', max: 10, cost: (l) => 1 + Math.floor(l / 2), desc: '+8 % PV et attaque des monstres par niveau.', effects: [{ mod: 'monsterHp', value: 0.08 }, { mod: 'monsterAtk', value: 0.08 }] },
     { id: 'rb_research', name: 'Savoir ancestral', icon: '📚', max: 5, cost: (l) => 2 + l, desc: '-10 % de durée de recherche par niveau.', effects: [{ mod: 'researchSpeed', value: 0.1 }] },

@@ -51,7 +51,7 @@ export class ShopSystem {
   }
 
   speciesPool(rarity, pool) {
-    const boost = this.game.events.current()?.summonBoost || [];
+    const boost = [...(this.game.events.current()?.summonBoost || []), ...(this.game.seasons?.featuredFamilies() || [])];
     return MONSTERS.filter((m) => m.rarity === rarity && !m.guardian && m.id !== 'goblin_emperor')
       .map((m) => {
         let weight = m.pool !== 'none' ? 3 : 1;

@@ -100,6 +100,7 @@ export class MissionSystem {
     const p = this.progress(kind, inst);
     if (!p.done) return { ok: false, reason: 'Mission non terminée' };
     inst.claimed = true;
+    this.game.stats.add('missionsClaimed', 1);
     const granted = this.grant(this.rewardFor(def.reward, kind !== 'event'));
     this.game.bus.emit('missionsChanged');
     this.game.bus.emit('sfx', 'reward');

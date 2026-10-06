@@ -108,3 +108,36 @@ test('prestige 2.0 : conditions, réinitialisation, bonus permanents et débloca
   assert.equal(g.monsters.maxMutations(), 4);
   assert.ok(gold0 >= 0);
 });
+
+test('saisons hors ligne : saison datée, XP par statistiques, paliers et défis', () => {
+  const g = newGame();
+  const a = g.seasons.info(new Date(2026, 4, 1).getTime());
+  const b = g.seasons.info(new Date(2026, 4, 2).getTime());
+  assert.equal(a.key, b.key);
+  assert.ok(a.season.track.length >= 10);
+  assert.equal(g.seasons.xp(), 0);
+  g.stats.add('raidsDefended', 300);
+  g.stats.add('bossesDefeated', 2);
+  assert.equal(g.seasons.xp(), 90);
+  g.stats.add('runStages', 30);
+  const c0 = g.collection.totalChests();
+  assert.ok(g.seasons.claimTier(0).ok);
+  assert.ok(g.seasons.claimTier(1).ok);
+  assert.ok(g.collection.totalChests() > c0);
+  assert.equal(g.seasons.claimTier(1).ok, false);
+  // nouvelle saison : progression remise à zéro
+  g.state.season.key = 'old';
+  g.seasons.refresh();
+  assert.equal(g.seasons.xp(), 0);
+});
+
+test('objectifs endgame : progression et réclamation unique', () => {
+  const g = newGame();
+  g.state.modes.infinite.best = 120;
+  const goal = g.endgame.list().find((x) => x.id === 'eg_inf100');
+  assert.ok(goal.done);
+  assert.ok(g.endgame.claim('eg_inf100').ok);
+  assert.equal(g.endgame.claim('eg_inf100').ok, false);
+  assert.equal(g.state.endgame.title, goal.title);
+  assert.equal(g.endgame.claim('eg_inf1000').ok, false);
+});

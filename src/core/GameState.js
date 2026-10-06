@@ -6,6 +6,7 @@ import { defaultBiomeForFloor } from '../data/biomes.js';
 import { createModesState } from '../systems/RunSystem.js';
 import { createCollectionState } from '../systems/CollectionSystem.js';
 import { createTiersState } from '../systems/PrestigeTierSystem.js';
+import { createSeasonState } from '../systems/SeasonSystem.js';
 
 /** Crée un étage vierge (numéro à partir de 1). */
 export function createFloorState(number, extraSize = 0) {
@@ -46,7 +47,7 @@ export function createStats() {
     researchCompleted: 0, treasuryCollects: 0, treasuryUpgrades: 0, floorsUnlocked: 0,
     eliteKilled: 0, critHits: 0, offlineReturns: 0, chestsOpened: 0, ascensions: 0, battlesWatched: 0,
     maxFloor: 1, monstersOwnedTotal: 0,
-    runsStarted: 0, runsPlayed: 0, runsWon: 0, runStages: 0, rebirthCount: 0, transcendenceCount: 0, dimensionalCount: 0,
+    runsStarted: 0, runsPlayed: 0, runsWon: 0, runStages: 0, rebirthCount: 0, transcendenceCount: 0, dimensionalCount: 0, missionsClaimed: 0, biomeRaids: {},
     kill_warrior: 0, kill_archer: 0, kill_mage: 0, kill_paladin: 0, kill_healer: 0, kill_assassin: 0, kill_hunter: 0,
   };
 }
@@ -89,6 +90,8 @@ export function createNewState(now = Date.now(), startMult = 1) {
     meta: {},
     modes: createModesState(),
     collection: createCollectionState(),
+    season: createSeasonState(),
+    endgame: { claimed: {}, title: null },
     log: [],
     uidSeq: 2,
   };

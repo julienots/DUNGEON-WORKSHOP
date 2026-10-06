@@ -13,7 +13,7 @@ export const ModesScreen = {
   id: 'modes',
   title: 'Modes de jeu',
   icon: '🎮',
-  events: ['runChanged', 'resources'],
+  events: ['runChanged', 'resources', 'seasonChanged'],
   render() {
     const g = ctx.game;
     const wrap = h('div.modes');
@@ -26,6 +26,11 @@ export const ModesScreen = {
         Button('Reprendre', { variant: 'primary', small: true, onClick: () => ctx.router.go('Run') }),
       ));
     }
+
+    // Saison
+    const si = g.seasons.info();
+    wrap.appendChild(h('button.collection-banner', { type: 'button', onclick: () => { sfx('click'); ctx.router.go('Season'); } },
+      h('span.cb-icon', si.season.icon), h('div', h('b', si.season.name), h('div.small', `${formatShort(g.seasons.xp())} XP de saison · passe de récompenses, défis et objectifs endgame`)), h('span', '›')));
 
     // Défi du jour
     const daily = g.runs.dailyChallenge();
