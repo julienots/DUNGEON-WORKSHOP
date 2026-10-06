@@ -134,14 +134,22 @@ function botActions() {
       }
     }
   }
-  // Redéploiement : les monstres les plus forts des étages peu profonds descendent remplir les 2 derniers étages
-  for (let target = s.floors.length - 1; target >= Math.max(0, s.floors.length - 2); target--) {
-    const donors = s.monsters
-      .filter((m) => m.location && m.location.floor < s.floors.length - 3)
-      .sort((a, b) => g.monsters.power(b) - g.monsters.power(a));
-    for (const r of g.dungeon.roomCells(target)) {
-      while (donors.length && g.dungeon.roomCapacity(r.cell) > g.monsters.monstersAt(target, r.x, r.y).length) {
-        const m = donors.shift();
+  // Redéploiement : chaque étage garde au moins sa part de monstres (les pièges seuls n'achèvent pas les aventuriers)
+  {
+    const nF = s.floors.length;
+    const count = (fi) => s.monsters.filter((m) => m.location?.floor === fi).length;
+    const placed = s.monsters.filter((m) => m.location).length;
+    const share = Math.max(1, Math.floor(placed / nF));
+    for (let target = nF - 1; target >= 0; target--) {
+      let guard = 0;
+      while (count(target) < share && guard++ < 20) {
+        let donor = -1;
+        let best = share;
+        for (let fi = 0; fi < nF; fi++) if (fi !== target && count(fi) > best) { best = count(fi); donor = fi; }
+        if (donor < 0) break;
+        const r = g.dungeon.roomCells(target).find((c) => g.dungeon.roomCapacity(c.cell) > g.monsters.monstersAt(target, c.x, c.y).length);
+        if (!r) break;
+        const m = s.monsters.filter((x) => x.location?.floor === donor).sort((x, y) => g.monsters.power(y) - g.monsters.power(x))[0];
         const from = m.location;
         g.monsters.unassign(m.uid);
         if (!g.monsters.assign(m.uid, target, r.x, r.y).ok) {

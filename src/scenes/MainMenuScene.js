@@ -146,6 +146,7 @@ export class MainMenuScene extends Phaser.Scene {
       ctx.pendingLoadInfo = null;
       if (info?.migratedFrom) ui.toasts.show(`Sauvegarde V${info.migratedFrom} convertie vers la V2 (copie d’origine conservée)`, { icon: '💾', type: 'success', duration: 5000 });
       if (info?.preservedKey) ui.toasts.show('Sauvegarde illisible : une copie a été conservée, nouvelle partie démarrée.', { icon: '⚠️', type: 'error', duration: 6000 });
+      showTrapRuleNotice();
       if (ctx.pendingOfflineReport) {
         const r = ctx.pendingOfflineReport;
         ctx.pendingOfflineReport = null;
@@ -164,4 +165,27 @@ export class MainMenuScene extends Phaser.Scene {
       p.sh.x = p.spr.x;
     }
   }
+}
+
+/** Équilibrage V2 : une seule fois, prévient les joueurs dont des étages n'étaient défendus que par des pièges. */
+function showTrapRuleNotice() {
+  const g = ctx.game;
+  const meta = g.state.meta || (g.state.meta = {});
+  if (meta.trapRuleNotice) return;
+  const empty = g.state.floors
+    .map((f, i) => i)
+    .filter((i) => g.dungeon.roomCells(i).some((r) => r.cell.trap) && !g.state.monsters.some((m) => m.location?.floor === i));
+  meta.trapRuleNotice = true;
+  if (!empty.length) return;
+  const list = empty.slice(0, 8).map((i) => i + 1).join(', ') + (empty.length > 8 ? '…' : '');
+  setTimeout(() => {
+    ctx.ui.modals.open(
+      h('div',
+        h('p', 'Nouvelle règle de la V2 : les pièges affaiblissent les aventuriers (jusqu’à 70 % de leurs PV par raid), mais ce sont vos monstres qui doivent les achever.'),
+        h('p.small', `Étages sans aucun monstre : ${list}. Placez-y au moins quelques monstres pour continuer à remporter les raids.`),
+      ),
+      { title: 'Équilibrage des pièges', icon: '🧨' },
+    );
+  }, 1200);
+  g.requestSave(true);
 }

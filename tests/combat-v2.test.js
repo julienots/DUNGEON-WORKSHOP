@@ -118,3 +118,19 @@ test('changement de biome : verrouillage, coût, codex', () => {
   assert.ok(g.codex.has('biomes', 'astral'));
   assert.equal(g.dungeon.def(0).theme, BIOMES.astral.theme);
 });
+
+test('pièges : ne peuvent retirer que 70 % des PV d’un aventurier par raid (statuts compris)', () => {
+  const b = new Battle({ rng: new RNG(3), record: false });
+  const hero = unit({ id: 'h', side: 'B', hp: 1000 });
+  b.addUnits([hero]);
+  const trap = { trapId: 'mine', name: 'Mine', cell: { x: 0, y: 0 }, level: 1, damage: 5000, cooldown: 1, range: 99, element: 'neutral', effects: [{ id: 'poison', chance: 1, duration: 6, power: 1 }], synergies: [] };
+  for (let i = 0; i < 5; i++) b.trapStrike(trap);
+  b.advanceStatuses(6);
+  assert.ok(hero.alive, 'les pièges seuls n’achèvent pas');
+  assert.equal(hero.hp, 300);
+  // Les monstres, eux, achèvent normalement
+  const mon = unit({ id: 'm', side: 'A', atk: 5000 });
+  b.addUnits([mon]);
+  b.attack(mon, hero, { power: 1 }, 'neutral');
+  assert.ok(!hero.alive);
+});

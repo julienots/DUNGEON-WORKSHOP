@@ -71,6 +71,7 @@ export function showFloors() {
         h('div.small', `Menace ${f.threat}/${d.maxThreat} · Aventuriers niv. ~${g.adventurers.partyLevel(i + 1, f.threat)}`),
         h('div.small.biome-line', `${g.biomes.get(i).icon} ${g.biomes.get(i).name}`, h('button.biome-change', { type: 'button', onclick: (e) => { e.stopPropagation(); showBiomePicker(i, () => ctx.ui.modals.refresh(entry, build())); } }, 'Changer')),
         ProgressBar(f.threat / d.maxThreat, { color: 'red', height: 6 }),
+        !monsters && rooms > 1 ? h('div.small.floor-warn', '⚠️ Aucun monstre : les pièges seuls ne peuvent pas achever les aventuriers') : null,
       ),
       h('div.floor-card-go', i === g.viewFloor ? '👁️' : '›'),
       ));

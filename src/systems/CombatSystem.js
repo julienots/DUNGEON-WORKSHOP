@@ -420,6 +420,12 @@ export class Battle {
       dmg -= absorbed;
       if (shield.amount <= 0) tgt.statuses = tgt.statuses.filter((s) => s !== shield);
     }
+    // Dégâts d'environnement (pièges et leurs statuts) sur un aventurier : plafonnés sur l'ensemble du raid
+    if (!src && tgt.side === 'B' && C.trapMaxHpShare < 1) {
+      const room = Math.max(0, tgt.maxHp * C.trapMaxHpShare - (tgt.envDamage || 0));
+      dmg = Math.min(dmg, Math.floor(room));
+      tgt.envDamage = (tgt.envDamage || 0) + dmg;
+    }
     tgt.hp = Math.max(0, tgt.hp - dmg);
     if (src && src.side === 'A') this.stats.damageA += dmg;
     else if (src) this.stats.damageB += dmg;

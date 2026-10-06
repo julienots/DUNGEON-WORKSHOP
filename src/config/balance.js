@@ -17,6 +17,9 @@ export const BALANCE = {
     elementStrong: 1.5,
     elementSame: 0.8,
     maxEvents: 4000,
+    /** Part max. des PV d'un aventurier que les pièges (et leurs effets sur la durée) peuvent retirer en un raid :
+     *  les pièges affaiblissent, les monstres doivent achever. */
+    trapMaxHpShare: 0.7,
   },
 
   /** Croissance des statistiques par niveau : stat = base * (1 + linear*(L-1)) * expo^(L-1) */

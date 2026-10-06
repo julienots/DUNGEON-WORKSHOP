@@ -3193,3 +3193,4 @@ body.sheet-open .zoom-ctl { display: none; }
 .debug-fab { position: fixed; z-index: 9999; left: 8px; bottom: calc(var(--safe-bottom) + var(--nav-h) + 90px); width: 44px; height: 44px; border-radius: 50%; border: 2px solid #3cf2d0; background: rgba(10, 20, 20, 0.85); font-size: 22px; cursor: pointer; }
 .debug-select { min-height: 36px; max-width: 180px; border-radius: 8px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line-soft); }
 .debug .row { margin-bottom: 6px; }
+.floor-warn { color: #ffcc4d; margin-top: 4px; }
