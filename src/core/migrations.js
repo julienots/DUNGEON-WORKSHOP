@@ -12,6 +12,7 @@
 import { MONSTER_MAP } from '../data/monsters.js';
 import { ROOMS } from '../data/rooms.js';
 import { TRAITS, rollTraits } from '../data/traits.js';
+import { MUTATIONS } from '../data/mutations.js';
 import { BIOMES, defaultBiomeForFloor } from '../data/biomes.js';
 import { RNG, hashString } from '../utils/rng.js';
 import { SAVE_VERSION } from '../utils/constants.js';
@@ -131,6 +132,7 @@ export function checkIntegrity(state) {
     m.traits = (Array.isArray(m.traits) ? m.traits : []).filter((t) => TRAITS[t]);
     if (!m.traits.length) m.traits = traitsForExisting(m);
     if (!Array.isArray(m.mutations)) m.mutations = [];
+    m.mutations = m.mutations.filter((mu) => mu && MUTATIONS[mu.id]).map((mu) => ({ id: mu.id, level: Math.max(1, Math.min(3, mu.level || 1)) }));
     if (!m.skin) m.skin = 'classic';
     const loc = m.location;
     if (loc) {

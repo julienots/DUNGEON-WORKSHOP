@@ -15,6 +15,8 @@ import { EQUIP_EFFECTS, STAT_NAMES, isPctStat } from '../../data/equipment.js';
 import { RARITY_INFO, EQUIP_SLOTS, EQUIP_SLOT_INFO, RARITIES } from '../../utils/constants.js';
 import { formatShort, formatNumber } from '../../utils/format.js';
 import { ECONOMY } from '../../config/economy.js';
+import { MONSTER_MAP, getPreEvolution } from '../../data/monsters.js';
+import { MUTATION_MAX_LEVEL, MAX_MUTATIONS, TRAIT_REROLL_COST, mutationCost } from '../../data/mutations.js';
 
 export const MonstersScreen = {
   id: 'monsters',
@@ -172,6 +174,27 @@ export function openMonsterDetail(uid) {
     } else {
       wrap.appendChild(h('div.small.muted.center', 'Forme finale.'));
     }
+    wrap.appendChild(evolutionTree(m));
+
+    // Mutations (V2)
+    const muts = g.monsters.mutations(m);
+    const canMut = g.monsters.canMutate(m);
+    const hasRoom = g.dungeon.hasPerk('mutation');
+    wrap.appendChild(h('div.cell-section', h('div.cell-section-title', `🧬 Mutations ${muts.length}/${MAX_MUTATIONS}`),
+      muts.length
+        ? h('div.trait-row', muts.map((mu) => h(`div.trait-chip.rarity-${mu.rarity}`, { style: { '--rc': RARITY_INFO[mu.rarity].color }, title: mu.desc, onclick: () => ctx.ui.toasts.show(`${mu.name} (niv. ${mu.level}/${MUTATION_MAX_LEVEL}) : ${mu.desc}`, { icon: mu.icon }) },
+          h('span.trait-icon', mu.icon), h('span.trait-name', `${mu.name} ${'I'.repeat(mu.level)}`))))
+        : h('div.small.muted', 'Aucune mutation. Les mutations rares changent profondément un monstre.'),
+      hasRoom
+        ? h('div.row.gap.wrap.center',
+          Button('🧬 Muter', { variant: canMut.ok ? 'gold' : 'secondary', small: true, cost: canMut.cost || mutationCost(g.monsters.mutationLevels(m)), disabled: !canMut.ok, onClick: () => doMutate(uid) }),
+          Button('🎲 Relancer les traits', { small: true, cost: TRAIT_REROLL_COST, disabled: !g.monsters.canRerollTraits(m).ok, onClick: () => {
+            const r = g.monsters.rerollTraits(uid);
+            if (!r.ok) return ctx.ui.toasts.show(r.reason, { icon: '⛔', type: 'error' });
+            ctx.ui.toasts.show('Nouveaux traits : ' + g.monsters.traits(g.monsters.get(uid)).map((t) => `${t.icon} ${t.name}`).join(', '), { icon: '🎲', type: 'success' });
+          } }))
+        : h('div.small.muted', '🔒 Construisez une Salle de mutation (catégorie 👹 Monstres) pour muter vos monstres.'),
+    ));
 
     // Actions
     wrap.appendChild(h('div.row.gap.wrap.center',
@@ -203,6 +226,52 @@ export function openMonsterDetail(uid) {
     offs.forEach((o) => o());
     prev?.();
   };
+}
+
+let treeOpen = false;
+
+/** Arbre d'évolution complet (depuis la forme de base), position actuelle mise en évidence. */
+function evolutionTree(m) {
+  const g = ctx.game;
+  let root = m.speciesId;
+  for (let p = getPreEvolution(root); p; p = getPreEvolution(root)) root = p.id;
+  const path = new Set([m.speciesId]);
+  for (let p = getPreEvolution(m.speciesId); p; p = getPreEvolution(p.id)) path.add(p.id);
+  const seen = new Set();
+  const node = (id, depth) => {
+    if (seen.has(id)) return null;
+    seen.add(id);
+    const sp = MONSTER_MAP[id];
+    if (!sp) return null;
+    const known = g.codex.has('monsters', id) || path.has(id);
+    const r = RARITY_INFO[sp.rarity];
+    const cur = id === m.speciesId;
+    return h('div.evo-node-wrap',
+      h(`div.evo-node${cur ? '.current' : path.has(id) ? '.passed' : ''}${known ? '' : '.unknown'}`, { style: { '--rc': r.color, marginLeft: `${depth * 14}px` } },
+        monsterImg(id, 'evo-node-img'),
+        h('div.evo-node-body', h('b', known ? sp.name : '???'), h('div.small', { style: { color: r.color } }, `${r.name}${known ? ` · ${ELEMENTS[sp.element].icon}` : ''}`)),
+        cur ? h('span.chip', 'Actuel') : null,
+      ),
+      sp.evolutions.map((e) => node(e.to, depth + 1)),
+    );
+  };
+  const det = h('details.cell-section.evo-tree', { open: treeOpen, ontoggle: () => (treeOpen = det.open) }, h('summary.cell-section-title', '🌳 Arbre d’évolution (vos choix sont définitifs)'), node(root, 0));
+  return det;
+}
+
+function doMutate(uid) {
+  const g = ctx.game;
+  const res = g.monsters.mutate(uid);
+  if (!res.ok) return ctx.ui.toasts.show(res.reason, { icon: '⛔', type: 'error' });
+  const mu = res.mutation;
+  const r = RARITY_INFO[mu.rarity];
+  ctx.ui.modals.open(h('div.center.mutation-anim', { style: { '--rc': r.color } },
+    h('div.mutation-orb', mu.icon),
+    h('p', res.isNew ? 'Nouvelle mutation : ' : 'Mutation renforcée : ', h('b', { style: { color: r.color } }, `${mu.name} ${'I'.repeat(mu.level)}`)),
+    h('p.small', mu.desc),
+    h('div.small', { style: { color: r.color } }, r.name),
+    Button('Fascinant !', { variant: 'gold', onClick: () => ctx.ui.modals.close() }),
+  ), { title: 'Mutation !', icon: '🧬' });
 }
 
 function doEvolve(uid, to) {

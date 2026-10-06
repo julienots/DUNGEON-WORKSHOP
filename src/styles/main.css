@@ -3028,3 +3028,21 @@ body.route-battle #ui .tutorial {
 .zoom-btn:active { transform: scale(0.92); }
 body:not(.route-dungeon) .zoom-ctl { display: none; }
 body.sheet-open .zoom-ctl { display: none; }
+
+/* ---------------------------------------------------------------- V2 : arbre d'évolution, mutations */
+.evo-tree summary { cursor: pointer; list-style: none; }
+.evo-tree summary::-webkit-details-marker { display: none; }
+.evo-tree[open] summary { margin-bottom: 6px; }
+.evo-node { display: flex; align-items: center; gap: 8px; padding: 4px 8px; margin: 3px 0; border-radius: 10px; background: rgba(0, 0, 0, 0.25); border-left: 3px solid var(--rc); }
+.evo-node.current { background: color-mix(in srgb, var(--rc) 22%, rgba(0, 0, 0, 0.3)); box-shadow: 0 0 10px color-mix(in srgb, var(--rc) 40%, transparent); }
+.evo-node.passed { opacity: 0.75; }
+.evo-node.unknown .evo-node-img { filter: brightness(0) drop-shadow(0 0 2px rgba(255, 255, 255, 0.35)); }
+.evo-node-img { width: 38px; height: 38px; object-fit: contain; }
+.evo-node-body { flex: 1; min-width: 0; line-height: 1.15; }
+.mutation-anim { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.mutation-orb {
+  width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; font-size: 56px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rc) 60%, #fff), color-mix(in srgb, var(--rc) 30%, #000) 70%);
+  box-shadow: 0 0 30px var(--rc); animation: mut-pulse 1.2s ease-in-out infinite, pop-in 0.4s ease-out;
+}
+@keyframes mut-pulse { 50% { transform: scale(1.06) rotate(4deg); box-shadow: 0 0 50px var(--rc); } }

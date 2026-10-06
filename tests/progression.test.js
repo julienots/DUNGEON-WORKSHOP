@@ -11,7 +11,7 @@ test('niveau et évolution des monstres', () => {
   assert.ok(g.monsters.levelUp(m.uid).ok);
   assert.equal(m.level, 2);
   const opts = g.monsters.evolutionOptions(m);
-  assert.equal(opts.length, 2, 'deux branches pour le gobelin');
+  assert.equal(opts.length, 3, 'trois branches pour le gobelin (guerrier, shaman, assassin)');
   assert.equal(opts[0].ok, false);
   m.level = 20;
   g.state.floors[0].cells['2,1'] = { room: 'lab', level: 1, trap: null };

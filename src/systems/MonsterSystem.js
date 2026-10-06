@@ -7,6 +7,7 @@ import { ECONOMY } from '../config/economy.js';
 import { RARITIES } from '../utils/constants.js';
 import { scaleCost } from '../utils/helpers.js';
 import { TRAITS, rollTraits, traitEffects } from '../data/traits.js';
+import { MUTATIONS, MUTATION_IDS, MUTATION_MAX_LEVEL, MAX_MUTATIONS, mutationEffects, mutationCost, TRAIT_REROLL_COST } from '../data/mutations.js';
 import { RNG, hashString } from '../utils/rng.js';
 
 /** Fusionne des sacs de mods de passifs (additif, onHit : le plus fort l'emporte). */
@@ -19,6 +20,9 @@ export function mergeMods(...list) {
         if (!out.onHit || (v.chance || 0) > (out.onHit.chance || 0)) out.onHit = v;
       } else if (k === 'bonusVs') {
         out.bonusVs = { ...(out.bonusVs || {}), ...v };
+      } else if (k === 'resist') {
+        out.resist = { ...(out.resist || {}) };
+        for (const [el, x] of Object.entries(v)) out.resist[el] = Math.min(0.6, (out.resist[el] || 0) + x);
       } else if (typeof v === 'boolean') {
         out[k] = out[k] || v;
       } else if (k === 'undying') {
@@ -161,15 +165,16 @@ export class MonsterSystem {
       }
     }
 
-    // Traits (V2) : rendent chaque individu unique
+    // Traits et mutations (V2) : rendent chaque individu unique
     const tr = traitEffects(m.traits);
-    hp *= 1 + tr.stats.hp;
-    atk *= 1 + tr.stats.atk;
-    def *= 1 + tr.stats.def;
-    spd *= 1 + tr.stats.spd;
+    const mu = mutationEffects(m.mutations);
+    hp *= 1 + tr.stats.hp + mu.stats.hp;
+    atk *= 1 + tr.stats.atk + mu.stats.atk;
+    def *= 1 + tr.stats.def + mu.stats.def;
+    spd *= 1 + tr.stats.spd + mu.stats.spd;
 
     const passive = PASSIVES[sp.passive]?.mods || {};
-    const combined = mergeMods(passive, ...tr.mods, ...equipMods, ...(room?.eff?.mods || []), flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
+    const combined = mergeMods(passive, ...tr.mods, ...mu.mods, ...equipMods, ...(room?.eff?.mods || []), flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
     return {
       hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), spd: +spd.toFixed(1), crit,
       mods: combined,
@@ -179,6 +184,78 @@ export class MonsterSystem {
 
   traits(m) {
     return (m.traits || []).map((id) => ({ id, ...TRAITS[id] })).filter((t) => t.name);
+  }
+
+  // ------------------------------------------------------------------ mutations (V2)
+  mutationLevels(m) {
+    return (m.mutations || []).reduce((a, x) => a + (x.level || 1), 0);
+  }
+
+  canMutate(m) {
+    if (!m) return { ok: false, reason: 'Monstre introuvable' };
+    if (!this.game.dungeon.hasPerk('mutation')) return { ok: false, reason: 'Construisez une Salle de mutation.' };
+    const list = m.mutations || [];
+    const full = list.length >= MAX_MUTATIONS && list.every((x) => x.level >= MUTATION_MAX_LEVEL);
+    if (full) return { ok: false, reason: 'Mutations au maximum' };
+    const cost = mutationCost(this.mutationLevels(m));
+    if (!this.game.economy.canAfford(cost)) return { ok: false, reason: 'Ressources insuffisantes', cost };
+    return { ok: true, cost };
+  }
+
+  /** Tire une mutation (pondérée) : nouvelle mutation, ou niveau supplémentaire d'une mutation existante. */
+  rollMutation(m, rng) {
+    const list = m.mutations || [];
+    const canNew = list.length < MAX_MUTATIONS;
+    const pool = MUTATION_IDS.filter((id) => {
+      const has = list.find((x) => x.id === id);
+      return has ? has.level < MUTATION_MAX_LEVEL : canNew;
+    }).map((id) => [id, MUTATIONS[id].weight]);
+    return pool.length ? rng.weighted(pool) : null;
+  }
+
+  mutate(uid, rng = new RNG(hashString(`mut:${uid}:${Date.now()}:${Math.random()}`))) {
+    const m = this.get(uid);
+    const check = this.canMutate(m);
+    if (!check.ok) return check;
+    const id = this.rollMutation(m, rng);
+    if (!id) return { ok: false, reason: 'Aucune mutation possible' };
+    this.game.economy.spend(check.cost);
+    m.mutations = m.mutations || [];
+    let entry = m.mutations.find((x) => x.id === id);
+    if (entry) entry.level++;
+    else {
+      entry = { id, level: 1 };
+      m.mutations.push(entry);
+    }
+    this.game.codex.discover('mutations', id);
+    this.game.stats.add('mutationsGained', 1);
+    this.game.bus.emit('monstersChanged');
+    this.game.bus.emit('sfx', 'evolve');
+    this.game.requestSave(true);
+    return { ok: true, mutation: { ...MUTATIONS[id], id, level: entry.level }, isNew: entry.level === 1 };
+  }
+
+  canRerollTraits(m) {
+    if (!m) return { ok: false, reason: 'Monstre introuvable' };
+    if (!this.game.dungeon.hasPerk('mutation')) return { ok: false, reason: 'Construisez une Salle de mutation.' };
+    if (!this.game.economy.canAfford(TRAIT_REROLL_COST)) return { ok: false, reason: 'Ressources insuffisantes', cost: TRAIT_REROLL_COST };
+    return { ok: true, cost: TRAIT_REROLL_COST };
+  }
+
+  rerollTraits(uid, rng = new RNG(hashString(`traits:${uid}:${Date.now()}:${Math.random()}`))) {
+    const m = this.get(uid);
+    const check = this.canRerollTraits(m);
+    if (!check.ok) return check;
+    this.game.economy.spend(check.cost);
+    m.traits = rollTraits(rng);
+    for (const t of m.traits) this.game.codex.discover('traits', t);
+    this.game.bus.emit('monstersChanged');
+    this.game.requestSave(true);
+    return { ok: true, traits: m.traits };
+  }
+
+  mutations(m) {
+    return (m.mutations || []).filter((x) => MUTATIONS[x.id]).map((x) => ({ ...MUTATIONS[x.id], id: x.id, level: x.level }));
   }
 
   power(m) {

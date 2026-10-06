@@ -352,7 +352,7 @@ export class Battle {
   attack(src, tgt, sk, element) {
     if (!tgt.alive) return;
     // Esquive / aveuglement
-    const dodge = tgt.mods.dodge || 0;
+    const dodge = (tgt.mods.dodge || 0) * (1 - Math.min(1, src.mods.trueSight || 0));
     if (this.rng.chance(dodge) || this.rng.chance(this.missChance(src))) {
       this.emit({ type: 'miss', src: src.id, tgt: tgt.id });
       return;
@@ -372,6 +372,8 @@ export class Battle {
     if (sk.execute && tgt.hp / tgt.maxHp < 0.3) dmg *= 1 + sk.execute;
     dmg *= 1 + this.vulnerability(tgt);
     dmg *= 1 - Math.min(0.75, tgt.mods.damageReduction || 0);
+    // Résistances élémentaires (mutations, biomes…)
+    if (tgt.mods.resist?.[element]) dmg *= 1 - Math.min(0.6, tgt.mods.resist[element]);
     let crit = false;
     if (this.rng.chance(src.crit + (sideMod.critChance || 0))) {
       crit = true;
