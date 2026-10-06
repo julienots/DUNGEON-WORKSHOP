@@ -10,15 +10,20 @@ import { SKILLS } from '../../data/skills.js';
 import { PASSIVES } from '../../data/passives.js';
 import { getSpecies, getPreEvolution } from '../../data/monsters.js';
 import { ADVENTURERS } from '../../data/adventurers.js';
+import { LORE, LORE_CHAPTERS } from '../../data/lore.js';
 import { formatNumber } from '../../utils/format.js';
 
 const CATS = [
   { id: 'monsters', icon: '👹', label: 'Monstres' },
-  { id: 'bosses', icon: '👑', label: 'Boss' },
-  { id: 'rooms', icon: '🏠', label: 'Salles' },
+  { id: 'rooms', icon: '🏰', label: 'Salles' },
   { id: 'traps', icon: '🧨', label: 'Pièges' },
-  { id: 'equipment', icon: '🗡️', label: 'Objets' },
+  { id: 'bosses', icon: '👑', label: 'Boss' },
+  { id: 'equipment', icon: '🎁', label: 'Objets' },
+  { id: 'mutations', icon: '🧬', label: 'Mutations' },
+  { id: 'biomes', icon: '🌍', label: 'Biomes' },
+  { id: 'lore', icon: '📜', label: 'Lore' },
   { id: 'adventurers', icon: '🧙', label: 'Héros' },
+  { id: 'traits', icon: '✴️', label: 'Traits' },
 ];
 
 /** Codex : toutes les découvertes du Maître. */
@@ -41,6 +46,10 @@ export const CodexScreen = {
       api.refresh();
     }));
     const cat = api.state.cat;
+    if (cat === 'lore') {
+      wrap.appendChild(renderLore());
+      return wrap;
+    }
     const grid = h('div.codex-grid');
     for (const e of g.codex.entries(cat)) {
       const found = g.codex.has(cat, e.id);
@@ -52,7 +61,7 @@ export const CodexScreen = {
       else if (cat === 'adventurers') img = SpriteFactory.url(`hero_${e.id}`);
       const rarity = e.rarity && RARITY_INFO[e.rarity] ? e.rarity : null;
       grid.appendChild(h(`div.codex-entry${found ? '' : '.unknown'}${rarity ? '.rarity-' + rarity : ''}`, { style: rarity ? { '--rc': RARITY_INFO[rarity].color } : {}, onclick: () => found && openEntry(cat, e) },
-        img ? h('img', { src: img, alt: '' }) : h('div.codex-emoji', e.icon || '❔'),
+        img ? h('img', { src: img, alt: '' }) : h('div.codex-emoji', found ? e.icon || '❔' : '❔'),
         h('div.codex-name', found ? e.name : '???'),
       ));
     }
@@ -60,6 +69,37 @@ export const CodexScreen = {
     return wrap;
   },
 };
+
+/** Lore : chapitres, pages lues et pages encore cachées. */
+function renderLore() {
+  const g = ctx.game;
+  const box = h('div.lore');
+  for (const [cid, ch] of Object.entries(LORE_CHAPTERS)) {
+    const pages = LORE.filter((l) => l.chapter === cid);
+    const read = pages.filter((l) => g.codex.has('lore', l.id));
+    box.appendChild(h('h3.section-title', `${ch.icon} ${ch.name} · ${read.length}/${pages.length}`));
+    for (const l of pages) {
+      const ok = g.codex.has('lore', l.id);
+      box.appendChild(h(`details.lore-page${ok ? '' : '.locked'}`, { open: false },
+        h('summary', ok ? l.title : '??? — page à découvrir'),
+        ok ? h('p.lore-text', l.text) : h('p.small.muted', loreHint(l.unlock)),
+      ));
+    }
+  }
+  return box;
+}
+
+function loreHint(u) {
+  if (u.floor) return `Indice : atteindre l’étage ${u.floor}.`;
+  if (u.boss) return 'Indice : vaincre un certain boss.';
+  if (u.biome) return 'Indice : explorer un nouveau biome.';
+  if (u.ascensions) return `Indice : ${u.ascensions} Ascension(s).`;
+  if (u.mode) return 'Indice : essayer un mode de jeu.';
+  if (u.monsters) return `Indice : découvrir ${u.monsters} espèces.`;
+  if (u.mutation) return 'Indice : obtenir une mutation.';
+  if (u.master) return `Indice : niveau ${u.master} du Maître.`;
+  return '';
+}
 
 function openEntry(cat, e) {
   const g = ctx.game;

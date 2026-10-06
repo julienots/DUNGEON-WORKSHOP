@@ -3112,3 +3112,11 @@ body.sheet-open .zoom-ctl { display: none; }
 .loot-emoji { font-size: 40px; line-height: 56px; }
 .chest-foot { opacity: 0; transition: opacity 0.3s; }
 .chest-foot.show { opacity: 1; }
+
+/* ---------------------------------------------------------------- V2 : lore */
+.lore-page { margin: 6px 0; padding: 10px 12px; border-radius: 12px; background: linear-gradient(180deg, rgba(60, 44, 24, 0.55), rgba(30, 20, 14, 0.6)); border: 1px solid rgba(255, 210, 140, 0.25); }
+.lore-page summary { cursor: pointer; font-family: var(--font-title); font-weight: 700; color: #ffe0a0; list-style: none; }
+.lore-page summary::-webkit-details-marker { display: none; }
+.lore-page.locked { opacity: 0.6; }
+.lore-page.locked summary { color: var(--muted); font-family: var(--font-body); }
+.lore-text { margin: 8px 0 0; font-style: italic; line-height: 1.5; color: #f1e2c6; }

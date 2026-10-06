@@ -67,3 +67,20 @@ test('nouveaux boss épiques : passifs et artefacts valides', () => {
     assert.equal(b.phases.length, 3);
   }
 });
+
+test('codex 2.0 et lore : 8 catégories, déblocage par la progression', async () => {
+  const { CODEX_CATEGORIES } = await import('../src/systems/CodexSystem.js');
+  for (const c of ['monsters', 'rooms', 'traps', 'bosses', 'equipment', 'mutations', 'biomes', 'lore']) assert.ok(CODEX_CATEGORIES.includes(c));
+  const g = newGame();
+  for (const c of CODEX_CATEGORIES) assert.ok(g.codex.count(c).total > 0, c);
+  let pages = [];
+  g.bus.on('loreDiscovered', (l) => pages.push(l.id));
+  g.codex.checkLore();
+  assert.ok(g.codex.has('lore', 'l_first_stone'), 'première page connue dès le départ');
+  g.state.stats.maxFloor = 6;
+  g.codex.checkLore();
+  assert.ok(pages.includes('l_mag_2'));
+  const n = pages.length;
+  g.codex.checkLore();
+  assert.equal(pages.length, n, 'pas de doublon');
+});

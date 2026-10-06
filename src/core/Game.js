@@ -71,6 +71,7 @@ export class Game {
     this.saveDirty = false;
     this.lastSaveAt = 0;
     this.slowTimer = 0;
+    this.loreTick = 0;
     this.started = false;
 
     this.bus.on('stat', () => {
@@ -116,6 +117,8 @@ export class Game {
 
   afterLoad() {
     this.codex.syncOwned();
+    // Pages déjà méritées (sauvegardes V1) : débloquées en silence
+    if (!this.state.codex.lore || !Object.keys(this.state.codex.lore).length) this.codex.checkLore(true);
     this.mods.invalidate();
     this.raids.reset();
     this.viewFloor = Math.min(this.state.currentFloor || 0, this.state.floors.length - 1);
@@ -189,6 +192,7 @@ export class Game {
       this.slowTimer = 0;
       this.research.update(now);
       if (this.dungeon.trainTick(1)) this.bus.emit('monstersChanged');
+      if (++this.loreTick % 5 === 0) this.codex.checkLore();
       this.events.update(new Date(now));
       this.tutorial.update();
       if (this.achievementDirty) {

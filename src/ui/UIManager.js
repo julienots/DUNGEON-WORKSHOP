@@ -169,6 +169,7 @@ export class UIManager {
       this.toasts.show(`Succès débloqué : ${a.name}`, { icon: '🏆', type: 'gold' });
       sfx('reward');
     });
+    bus.on('loreDiscovered', (l) => this.toasts.show(`Nouvelle page de lore : « ${l.title} »`, { icon: '📜', type: 'gold', duration: 3500 }));
     bus.on('researchDone', (r, lvl) => this.toasts.show(`Recherche terminée : ${r.name}${r.maxLevel > 1 ? ' niv. ' + lvl : ''}`, { icon: r.icon || '🧪', type: 'success' }));
     bus.on('masterLevelUp', (lvl) => this.toasts.show(`Maître du donjon niveau ${lvl} ! (+1% or)`, { icon: '⭐', type: 'gold' }));
     bus.on('codexDiscovered', (cat, id) => {
