@@ -231,6 +231,7 @@ export class DungeonSystem {
     for (const m of this.game.monsters.monstersAt(fi, x, y)) m.location = null;
     if (cell.trap) this.game.economy.add(this.game.traps.sellValue(fi, cell.trap), false);
     delete this.floor(fi).cells[cellKey(x, y)];
+    if (this.floor(fi).decor) delete this.floor(fi).decor[cellKey(x, y)];
     this.game.economy.add(check.refund, false);
     this.game.bus.emit('monstersChanged');
     this.afterChange(fi, 'remove');
@@ -262,6 +263,10 @@ export class DungeonSystem {
     const cell = f.cells[cellKey(fx, fy)];
     delete f.cells[cellKey(fx, fy)];
     f.cells[cellKey(tx, ty)] = cell;
+    if (f.decor?.[cellKey(fx, fy)]) {
+      f.decor[cellKey(tx, ty)] = f.decor[cellKey(fx, fy)];
+      delete f.decor[cellKey(fx, fy)];
+    }
     for (const m of this.game.monsters.monstersAt(fi, fx, fy)) m.location = { floor: fi, x: tx, y: ty };
     this.game.bus.emit('monstersChanged');
     this.afterChange(fi, 'move');

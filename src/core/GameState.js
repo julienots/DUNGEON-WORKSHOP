@@ -4,6 +4,7 @@ import { cellKey } from '../utils/helpers.js';
 import { floorDef } from '../data/floors.js';
 import { defaultBiomeForFloor } from '../data/biomes.js';
 import { createModesState } from '../systems/RunSystem.js';
+import { createCollectionState } from '../systems/CollectionSystem.js';
 
 /** Crée un étage vierge (numéro à partir de 1). */
 export function createFloorState(number, extraSize = 0) {
@@ -86,6 +87,7 @@ export function createNewState(now = Date.now(), startMult = 1) {
     settings: { music: true, sfx: true, musicVolume: 0.5, sfxVolume: 0.8, quality: 'high', vibration: true, speed: 1, notifications: true, performanceMode: false },
     meta: {},
     modes: createModesState(),
+    collection: createCollectionState(),
     log: [],
     uidSeq: 2,
   };

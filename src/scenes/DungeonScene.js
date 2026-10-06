@@ -8,6 +8,7 @@ import { RARITY_INFO, FONT_TITLE, FONT_BODY } from '../utils/constants.js';
 import { cellKey } from '../utils/helpers.js';
 import { formatShort } from '../utils/format.js';
 import { ECONOMY } from '../config/economy.js';
+import { SpriteFactory } from '../gfx/SpriteFactory.js';
 import { FxKit } from './FxKit.js';
 
 const HUD_STRIP = 112; // hauteur (px CSS) réservée au bandeau de raid au-dessus de la navigation
@@ -428,6 +429,11 @@ export class DungeonScene extends Phaser.Scene {
       const ring = add(this.add.image(c.x, c.y, 'p_ring').setDisplaySize(T * 0.6, T * 0.6).setTint(0xff5ce1).setBlendMode(Phaser.BlendModes.ADD), base + 4);
       this.tweens.add({ targets: ring, angle: 360, duration: 4000, repeat: -1 });
     }
+    // Décoration (V2, cosmétique)
+    const deco = this.g.dungeon.floor(this.fi)?.decor?.[cellKey(x, y)];
+    if (deco && this.textures.exists(`decor_${deco}`)) {
+      add(this.add.image(c.x + T * 0.3, c.y + T * 0.24, `decor_${deco}`).setDisplaySize(T * 0.38, T * 0.38), base + 22);
+    }
     // Synergies actives (V2)
     const synCount = this.g.dungeon.synergiesAt(this.fi, x, y).length;
     if (synCount) {
@@ -493,7 +499,7 @@ export class DungeonScene extends Phaser.Scene {
           aura = this.add.image(px, py, 'glow').setDisplaySize(size * 1.3, size * 1.3).setTint(RARITY_INFO[sp.rarity].glow).setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD).setDepth(depth);
           this.tweens.add({ targets: aura, alpha: 0.15, duration: 1200, yoyo: true, repeat: -1 });
         }
-        const spr = this.add.image(px, py, `mon_${sp.id}`).setDisplaySize(size, size).setDepth(depth + 0.05).setFlipX(true);
+        const spr = this.add.image(px, py, SpriteFactory.monsterKey(sp.id, m.skin)).setDisplaySize(size, size).setDepth(depth + 0.05).setFlipX(true);
         this.entityLayer.add([shadow, ...(aura ? [aura] : []), spr]);
         const bob = this.tweens.add({ targets: spr, y: py - size * 0.04, scaleY: spr.scaleY * 0.97, duration: 700 + Math.random() * 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: Math.random() * 400 });
         this.monsterViews.set(m.uid, { spr, shadow, aura, baseX: px, baseY: py, size, bob, cell: { x, y }, depth });

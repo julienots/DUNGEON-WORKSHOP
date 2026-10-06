@@ -86,6 +86,11 @@ export class ProgressionSystem {
     const total = {};
     for (let l = p.rewardedLevel + 1; l <= p.level; l++) {
       for (const [k, v] of Object.entries(masterLevelReward(l))) total[k] = (total[k] || 0) + v;
+      // Coffres de palier
+      if (this.game.collection) {
+        if (l % 25 === 0) this.game.collection.addChest('legendary');
+        else if (l % 5 === 0) this.game.collection.addChest('rare');
+      }
     }
     p.rewardedLevel = Math.max(p.rewardedLevel, p.level);
     if (Object.keys(total).length) {

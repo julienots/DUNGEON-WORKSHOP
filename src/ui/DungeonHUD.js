@@ -145,7 +145,7 @@ export class DungeonHUD {
     setBadge(this.side.modes, g.runs.run ? 1 : daily);
     this.side.modes.classList.toggle('locked', !g.runs.isUnlocked('survival'));
     setBadge(this.side.achievements, g.achievements.claimableCount());
-    setBadge(this.side.shop, Date.now() >= g.shop.freeChestReadyAt() ? 1 : 0);
+    setBadge(this.side.shop, (Date.now() >= g.shop.freeChestReadyAt() ? 1 : 0) + g.collection.totalChests());
     const bossReady = g.bosses.floorBosses().filter((b) => !b.defeated || b.repeatAvailable).length + (g.bosses.eventBoss()?.available ? 1 : 0);
     setBadge(this.side.bosses, bossReady + (g.dungeon.nextFloorInfo().ok ? 1 : 0));
     setBadge(this.side.event, g.bosses.eventBoss()?.available ? 1 : 0);

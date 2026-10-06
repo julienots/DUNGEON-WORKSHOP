@@ -113,6 +113,7 @@ export class BossSystem {
       g.stats.add('bossesDefeated', 1);
       if (entry.event) g.stats.add('eventBossKills', 1);
       g.codex.discover('bosses', entry.boss.id);
+      if (first) g.collection.addChest(entry.tier || entry.boss.floor >= 30 ? 'legendary' : 'epic');
       if (first && entry.boss.guardian) {
         granted.guardian = g.monsters.create(entry.boss.guardian);
       }

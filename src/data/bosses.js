@@ -74,6 +74,38 @@ export const BOSSES = {
     },
     guardian: 'guardian_dragon',
   },
+  vampire_queen: {
+    id: 'vampire_queen', name: 'Reine vampire', icon: '🩸', family: 'vampire', element: 'shadow', floor: 25,
+    hp: 2800, attack: 60, defense: 28, speed: 13, levelOffset: 3,
+    basic: 'basic_bite', skills: ['vampire_bite', 'bat_swarm'], passive: 'boss_vampire',
+    palette: { body: '#e8d0e0', dark: '#2a0a1a', light: '#ffffff', accent: '#c0102a', eye: '#ff2040' },
+    desc: 'Souveraine des nuits sans fin. Chaque goutte de sang la rend plus forte.',
+    phases: [
+      { hpBelow: 0.7, name: 'Nuée de sang', msg: 'La Reine se dissout en une nuée de chauves-souris !', statMult: { spd: 1.3 }, summon: [{ name: 'Chauve-souris de sang', family: 'bat', element: 'shadow', count: 3, hp: 0.05, atk: 0.35, def: 0.3, spd: 1.6, basic: 'basic_bite', skills: ['bat_drain'], palette: { body: '#7a1a2a', dark: '#2a0610', light: '#c04a5a', accent: '#ffcc99', eye: '#ff2040' } }] },
+      { hpBelow: 0.4, name: 'Lune de sang', msg: 'La lune rougit… la Reine se régénère !', heal: 0.2, statMult: { atk: 1.3 }, addSkills: ['blood_moon'] },
+      { hpBelow: 0.15, name: 'Soif éternelle', msg: 'La Reine perd tout contrôle !', statMult: { atk: 1.4, spd: 1.2 } },
+    ],
+    rewards: {
+      first: { crystals: 450, essence: 900, darkEssence: 120, legendaryEssence: 8, artifact: 'blood_chalice' },
+      repeat: { crystals: 55, essence: 220, darkEssence: 18, legendaryEssence: 1 },
+    },
+  },
+  king_of_the_dead: {
+    id: 'king_of_the_dead', name: 'Roi des morts', icon: '💀', family: 'skeleton', element: 'shadow', floor: 35,
+    hp: 3400, attack: 62, defense: 34, speed: 9, levelOffset: 3,
+    basic: 'basic_smash', skills: ['death_strike', 'lich_nova'], passive: 'boss_undead_king',
+    palette: { body: '#d8d0b8', dark: '#3a3428', light: '#ffffff', accent: '#2a1a4a', eye: '#3cf2d0' },
+    desc: 'Il a régné mille ans et refuse de céder son trône, même à la mort.',
+    phases: [
+      { hpBelow: 0.75, name: 'Armée des morts', msg: 'Le Roi relève ses soldats !', addSkills: ['raise_dead'], summon: [{ name: 'Garde squelette', family: 'skeleton', element: 'shadow', count: 3, hp: 0.07, atk: 0.4, def: 0.6, spd: 1, basic: 'basic_melee', palette: { body: '#ded6bf', dark: '#867d66', light: '#ffffff', accent: '#3a3f55', eye: '#3cf2d0' } }] },
+      { hpBelow: 0.45, name: 'Couronne funèbre', msg: 'La couronne absorbe les âmes !', statMult: { def: 1.4 }, addSkills: ['soul_reap'] },
+      { hpBelow: 0.2, name: 'Dernier décret', msg: 'Le Roi des morts lance son dernier décret !', statMult: { atk: 1.6 } },
+    ],
+    rewards: {
+      first: { crystals: 550, essence: 1200, darkEssence: 180, legendaryEssence: 10, dimensionalFragments: 3, artifact: 'crown_of_the_dead' },
+      repeat: { crystals: 65, essence: 280, darkEssence: 25, legendaryEssence: 1 },
+    },
+  },
   demon_king: {
     id: 'demon_king', name: 'Roi démon', icon: '👹', family: 'boss_demon', element: 'fire', floor: 30,
     hp: 3000, attack: 62, defense: 32, speed: 12, levelOffset: 3,

@@ -9,6 +9,7 @@ import { openMonsterDetail } from './MonstersScreen.js';
 import { ROOMS, BUILDABLE_ROOMS } from '../../data/rooms.js';
 import { TRAPS, TRAP_LIST } from '../../data/traps.js';
 import { ROOM_SYNERGIES } from '../../data/roomSynergies.js';
+import { DECORATIONS, DECORATION_IDS } from '../../data/cosmetics.js';
 import { STATUSES } from '../../data/statuses.js';
 import { ELEMENTS } from '../../data/elements.js';
 import { BALANCE } from '../../config/balance.js';
@@ -85,6 +86,21 @@ function buildContent(fi, x, y, cell, rerender) {
   if (nextMs) bonuses.push(`🎯 Niveau ${nextMs.level} : ${nextMs.desc}`);
   if (bonuses.length) wrap.appendChild(h('ul.bonus-list', bonuses.map((b) => h('li', b))));
 
+  // Décoration (V2, cosmétique)
+  if (!rd.special || cell.room === 'core') {
+    const owned = DECORATION_IDS.filter((id) => (g.state.collection.decorations[id] || 0) > 0);
+    const cur = g.dungeon.floor(fi).decor?.[`${x},${y}`] || null;
+    if (owned.length) {
+      wrap.appendChild(h('div.cell-section', h('div.cell-section-title', '🏺 Décoration'),
+        h('div.skin-pick',
+          h(`button.skin-chip${cur ? '' : '.on'}`, { type: 'button', onclick: () => g.collection.placeDecoration(fi, x, y, null) }, h('span', '∅ Aucune')),
+          owned.map((id) => h(`button.skin-chip${cur === id ? '.on' : ''}`, { type: 'button', disabled: cur !== id && g.collection.decorationsFree(id) <= 0, onclick: () => {
+            const r = g.collection.placeDecoration(fi, x, y, id);
+            if (!r.ok) ctx.ui.toasts.show(r.reason, { icon: '⛔' });
+          } }, h('img.skin-chip-img', { src: spriteUrl(`decor_${id}`), alt: '' }), h('span', DECORATIONS[id].name))))));
+    }
+  }
+
   // Synergies (V2)
   const syns = g.dungeon.synergiesAt(fi, x, y);
   const possible = ROOM_SYNERGIES.filter((sy) => g.dungeon.matchRoomTag(sy.room, cell.room) && !syns.some((a) => a.syn.id === sy.id));
@@ -103,7 +119,7 @@ function buildContent(fi, x, y, cell, rerender) {
     for (const m of occupants) {
       const sp = g.monsters.species(m);
       row.appendChild(h(`div.occupant.rarity-${sp.rarity}`, { style: { '--rc': RARITY_INFO[sp.rarity].color }, onclick: () => openMonsterDetail(m.uid) },
-        monsterImg(sp.id, 'occ-img'),
+        monsterImg(sp.id, 'occ-img', m.skin),
         h('div.occ-name', sp.name),
         h('div.occ-lvl', `Niv. ${m.level}`),
         h('button.occ-remove', { type: 'button', 'aria-label': 'Retirer', onclick: (e) => { e.stopPropagation(); sfx('click'); g.monsters.unassign(m.uid); } }, '✕'),

@@ -278,7 +278,7 @@ export class MonsterSystem {
       id: `${idPrefix}${m.uid}`, side: 'A', name: sp.name, family: sp.family, element: sp.element, level: m.level,
       rarity: sp.rarity, rarityRank: RARITIES.indexOf(sp.rarity) + 1, role: sp.role,
       hp: st.hp, atk: st.atk, def: st.def, spd: st.spd, crit: st.crit,
-      basic: sp.basic, skills: sp.skills, mods: st.mods, sprite: `mon_${sp.id}`, monsterUid: m.uid, size: sp.size,
+      basic: sp.basic, skills: sp.skills, mods: st.mods, sprite: m.skin && m.skin !== 'classic' ? `mon_${sp.id}__${m.skin}` : `mon_${sp.id}`, skin: m.skin, monsterUid: m.uid, size: sp.size,
     };
   }
 

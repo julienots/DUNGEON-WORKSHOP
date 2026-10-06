@@ -608,6 +608,15 @@ export class RunSystem {
     if (stage.isBoss) {
       add('crystals', 5 * mult);
       add('legendaryEssence', mult >= 1 ? 1 : 0);
+      if (mult >= 1) {
+        const chest = run.mode === 'bossRush' ? (stage.n >= 9 ? 'legendary' : 'epic') : stage.n >= 20 ? 'epic' : 'rare';
+        run.chests = run.chests || {};
+        run.chests[chest] = (run.chests[chest] || 0) + 1;
+      }
+    }
+    if (run.mode === 'infinite' && stage.floor % 50 === 0 && stage.floor > this.ms.infinite.best) {
+      run.chests = run.chests || {};
+      run.chests.legendary = (run.chests.legendary || 0) + 1;
     }
     if (run.mode === 'infinite' && stage.floor % 10 === 0 && stage.floor > this.ms.infinite.best) add('dimensionalFragments', 1 + Math.floor(stage.floor / 100));
     if (run.mode === 'bossRush' && stage.n % 3 === 0) add('dimensionalFragments', 1);
@@ -692,6 +701,11 @@ export class RunSystem {
     }
     for (const k of Object.keys(rewards)) if (!rewards[k]) delete rewards[k];
     g.economy.add(rewards);
+    // Coffres gagnés (perdus seulement en cas de défaite/abandon sans score)
+    const chests = {};
+    if (keep >= 1 || reason === 'abandon') for (const [r, n] of Object.entries(run.chests || {})) if (n > 0) chests[r] = n;
+    if (success && run.daily && firstClear) chests.epic = (chests.epic || 0) + 1;
+    for (const [r, n] of Object.entries(chests)) g.collection.addChest(r, n);
 
     // XP : maître + monstres de la collection engagés
     g.master.addXp(10 * run.stage + 25 * run.bosses);
@@ -716,7 +730,7 @@ export class RunSystem {
 
     g.stats.add('runsPlayed', 1);
     if (success) g.stats.add('runsWon', 1);
-    const report = { mode: run.mode, reason, success, score, rewards, souls, firstClear, newBest, rank, stages: run.stage, kills: run.kills, bosses: run.bosses, xp, levelUps, reduced: factor < 1 };
+    const report = { mode: run.mode, reason, success, score, rewards, chests, souls, firstClear, newBest, rank, stages: run.stage, kills: run.kills, bosses: run.bosses, xp, levelUps, reduced: factor < 1 };
     this.ms.activeRun = null;
     this.lastReport = report;
     g.bus.emit('runEnded', report);

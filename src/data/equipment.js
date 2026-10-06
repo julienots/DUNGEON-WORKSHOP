@@ -34,6 +34,8 @@ export const EQUIPMENT_BASES = [
 
 /** Artefacts uniques (récompenses de boss). */
 export const UNIQUE_ARTIFACTS = {
+  blood_chalice: { id: 'blood_chalice', name: 'Calice de sang', slot: 'artifact', icon: '🍷', rarity: 'mythic', main: { stat: 'attackPct', value: 0.25 }, effect: 'lifesteal', unique: true },
+  crown_of_the_dead: { id: 'crown_of_the_dead', name: 'Couronne des morts', slot: 'artifact', icon: '👑', rarity: 'mythic', main: { stat: 'hpPct', value: 0.35 }, effect: 'thorns', unique: true },
   heart_of_stone: { id: 'heart_of_stone', name: 'Cœur de Pierre', slot: 'artifact', icon: '🪨', rarity: 'legendary', main: { stat: 'hpPct', value: 0.2 }, effect: 'stoneskin', unique: true },
   archmage_tome: { id: 'archmage_tome', name: 'Grimoire de l’Archimage', slot: 'artifact', icon: '📖', rarity: 'legendary', main: { stat: 'attackPct', value: 0.2 }, effect: 'spellbook', unique: true },
   hydra_fang: { id: 'hydra_fang', name: 'Croc de l’Hydre', slot: 'artifact', icon: '🦷', rarity: 'legendary', main: { stat: 'attackPct', value: 0.15 }, effect: 'venom', unique: true },

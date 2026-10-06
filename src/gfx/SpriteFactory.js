@@ -8,6 +8,17 @@ import { BOSSES } from '../data/bosses.js';
 import { ROOMS } from '../data/rooms.js';
 import { TRAPS } from '../data/traps.js';
 import { THEMES } from '../data/floors.js';
+import { SKINS, DECORATIONS } from '../data/cosmetics.js';
+import { CHESTS } from '../data/chests.js';
+import { drawDecoration, drawChest } from './collectionArt.js';
+import { hexToRgb, rgbToHex } from './draw.js';
+
+/** Mélange deux couleurs hexadécimales (t = part de b). */
+function mixHex(a, b, t) {
+  const A = hexToRgb(a);
+  const B = hexToRgb(b);
+  return rgbToHex({ r: Math.round(A.r + (B.r - A.r) * t), g: Math.round(A.g + (B.g - A.g) * t), b: Math.round(A.b + (B.b - A.b) * t) });
+}
 
 export const MONSTER_TEX = 160;
 export const BOSS_TEX = 224;
@@ -78,6 +89,10 @@ class SpriteFactoryImpl {
       }
     });
     jobs.push(() => {
+      for (const [id, d] of Object.entries(DECORATIONS)) this.make(`decor_${id}`, 64, 64, (ctx) => drawDecoration(ctx, id, d));
+      for (const [id, c] of Object.entries(CHESTS)) this.make(`chest_${id}`, 128, 128, (ctx) => drawChest(ctx, id, c));
+    });
+    jobs.push(() => {
       for (const b of Object.values(BOSSES)) {
         this.make(`boss_${b.id}`, BOSS_TEX, BOSS_TEX, (ctx) => drawMonster(ctx, b.family, b.palette, { stage: 4 }), BOSS_TEX / 128);
         for (const ph of b.phases || []) {
@@ -90,6 +105,22 @@ class SpriteFactoryImpl {
 
   monsterTexture(m) {
     return this.make(`mon_${m.id}`, MONSTER_TEX, MONSTER_TEX, (ctx) => drawMonster(ctx, m.family, m.palette, { stage: m.stage, gear: m.gear }), MONSTER_TEX / 128);
+  }
+
+  /** Clé de texture d'un monstre avec son skin (texture générée à la demande). */
+  monsterKey(speciesId, skin = 'classic') {
+    const base = `mon_${speciesId}`;
+    const sk = SKINS[skin];
+    if (!sk || !sk.palette) return base;
+    const key = `${base}__${skin}`;
+    if (!this.canvases.has(key)) {
+      const m = MONSTERS.find((x) => x.id === speciesId);
+      if (!m) return base;
+      const pal = {};
+      for (const k of ['body', 'dark', 'light', 'accent', 'eye']) pal[k] = mixHex(m.palette[k] || '#888888', sk.palette[k], k === 'eye' ? 1 : 0.86);
+      this.make(key, MONSTER_TEX, MONSTER_TEX, (ctx) => drawMonster(ctx, m.family, pal, { stage: m.stage, gear: m.gear }), MONSTER_TEX / 128);
+    }
+    return key;
   }
 
   summonTexture(s) {

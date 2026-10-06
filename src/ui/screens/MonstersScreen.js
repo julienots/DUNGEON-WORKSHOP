@@ -16,6 +16,7 @@ import { RARITY_INFO, EQUIP_SLOTS, EQUIP_SLOT_INFO, RARITIES } from '../../utils
 import { formatShort, formatNumber } from '../../utils/format.js';
 import { ECONOMY } from '../../config/economy.js';
 import { MONSTER_MAP, getPreEvolution } from '../../data/monsters.js';
+import { SKINS, SKIN_IDS } from '../../data/cosmetics.js';
 import { MUTATION_MAX_LEVEL, MAX_MUTATIONS, TRAIT_REROLL_COST, mutationCost } from '../../data/mutations.js';
 
 export const MonstersScreen = {
@@ -85,7 +86,7 @@ export function openMonsterDetail(uid) {
     const maxLvl = g.monsters.maxLevel(m);
     const wrap = h('div.mdetail', { style: { '--rc': r.color } });
     wrap.appendChild(h('div.mdetail-hero',
-      h('div.mdetail-portrait', monsterImg(sp.id, 'mdetail-img')),
+      h('div.mdetail-portrait', monsterImg(sp.id, 'mdetail-img', m.skin)),
       h('div.mdetail-info',
         h('div.mdetail-rarity', { style: { color: r.color } }, `${r.name} · ${ELEMENTS[sp.element].icon} ${ELEMENTS[sp.element].name}`),
         h('div.mdetail-lvl', `Niveau ${m.level} / ${maxLvl}`),
@@ -197,6 +198,11 @@ export function openMonsterDetail(uid) {
       hasRoom
         ? h('div.row.gap.wrap.center',
           Button('🧬 Muter', { variant: canMut.ok ? 'gold' : 'secondary', small: true, cost: canMut.cost || mutationCost(g.monsters.mutationLevels(m)), disabled: !canMut.ok, onClick: () => doMutate(uid) }),
+          g.state.collection.serums ? Button(`🧪 Sérum (${g.state.collection.serums})`, { small: true, variant: 'primary', disabled: !hasRoom, onClick: () => {
+            const r = g.collection.useSerum(uid);
+            if (!r.ok) return ctx.ui.toasts.show(r.reason, { icon: '⛔', type: 'error' });
+            ctx.ui.toasts.show(`${r.mutation.icon} ${r.mutation.name} ${'I'.repeat(r.mutation.level)}`, { icon: '🧪', type: 'success' });
+          } }) : null,
           Button('🎲 Relancer les traits', { small: true, cost: TRAIT_REROLL_COST, disabled: !g.monsters.canRerollTraits(m).ok, onClick: () => {
             const r = g.monsters.rerollTraits(uid);
             if (!r.ok) return ctx.ui.toasts.show(r.reason, { icon: '⛔', type: 'error' });
@@ -204,6 +210,14 @@ export function openMonsterDetail(uid) {
           } }))
         : h('div.small.muted', '🔒 Construisez une Salle de mutation (catégorie 👹 Monstres) pour muter vos monstres.'),
     ));
+
+    // Skins (V2, cosmétique)
+    const skins = SKIN_IDS.filter((id) => g.collection.hasSkin(id));
+    if (skins.length > 1) {
+      wrap.appendChild(h('div.cell-section', h('div.cell-section-title', '🎨 Apparence'),
+        h('div.skin-pick', skins.map((id) => h(`button.skin-chip${(m.skin || 'classic') === id ? '.on' : ''}`, { type: 'button', title: SKINS[id].name, onclick: () => g.collection.setSkin(uid, id) },
+          monsterImg(sp.id, 'skin-chip-img', id), h('span', SKINS[id].name))))));
+    }
 
     // Actions
     wrap.appendChild(h('div.row.gap.wrap.center',

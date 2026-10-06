@@ -3061,3 +3061,54 @@ body.sheet-open .zoom-ctl { display: none; }
 .biome-line { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
 .biome-change { min-height: 30px; padding: 2px 10px; border-radius: 10px; border: 1px solid var(--line-soft); background: rgba(255, 255, 255, 0.06); color: var(--gold); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .choice-card.locked { opacity: 0.55; }
+
+/* ---------------------------------------------------------------- V2 : collection, coffres, skins */
+.collection { display: flex; flex-direction: column; gap: 10px; }
+.collection-banner {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 10px; border-radius: var(--radius); text-align: left;
+  font: inherit; color: var(--text); cursor: pointer;
+  background: linear-gradient(110deg, rgba(255, 181, 46, 0.25), rgba(181, 108, 255, 0.18)); border: 1px solid rgba(255, 204, 77, 0.55);
+}
+.collection-banner > div { flex: 1; }
+.cb-icon { font-size: 30px; }
+.chest-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.chest-card {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; border-radius: var(--radius);
+  background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--rc) 22%, transparent), rgba(0, 0, 0, 0.35) 70%);
+  border: 1px solid color-mix(in srgb, var(--rc) 45%, transparent);
+}
+.chest-card.has { box-shadow: 0 0 14px color-mix(in srgb, var(--rc) 40%, transparent); }
+.chest-img { width: 84px; height: 84px; }
+.chest-card.has .chest-img { animation: chest-wiggle 2.4s ease-in-out infinite; }
+@keyframes chest-wiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-6deg); } 90% { transform: rotate(6deg); } 95% { transform: rotate(-3deg); } }
+.chest-name { font-weight: 900; font-size: 13px; text-align: center; }
+.chest-count { font-family: var(--font-title); font-size: 18px; color: var(--rc); }
+.skin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.skin-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; text-align: center; background: rgba(0, 0, 0, 0.3); border: 1px solid color-mix(in srgb, var(--rc) 50%, transparent); font-size: 12px; }
+.skin-card.locked { opacity: 0.6; }
+.skin-img, .decor-img { width: 64px; height: 64px; object-fit: contain; }
+.silhouette { filter: brightness(0) drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)); }
+.skin-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.skin-chip { display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 3px 8px; border-radius: 12px; border: 1px solid var(--line-soft); background: rgba(0, 0, 0, 0.3); color: var(--text); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.skin-chip.on { border-color: var(--gold); background: rgba(255, 190, 60, 0.15); }
+.skin-chip:disabled { opacity: 0.4; }
+.skin-chip-img { width: 32px; height: 32px; object-fit: contain; }
+.chest-open { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.chest-stage { position: relative; width: 200px; height: 170px; display: grid; place-items: center; }
+.chest-open-img { width: 150px; height: 150px; z-index: 2; animation: chest-shake 0.9s ease-in-out; }
+@keyframes chest-shake { 0%, 100% { transform: none; } 20% { transform: rotate(-8deg) scale(1.05); } 40% { transform: rotate(8deg) scale(1.1); } 60% { transform: rotate(-10deg) scale(1.12); } 80% { transform: rotate(10deg) scale(1.15); } }
+.chest-rays { position: absolute; inset: -20px; border-radius: 50%; opacity: 0; background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 70%, transparent) 0 10deg, transparent 10deg 30deg); mask: radial-gradient(circle, #000 20%, transparent 70%); -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); }
+.chest-flash { position: absolute; inset: 0; border-radius: 50%; opacity: 0; background: radial-gradient(circle, #fff, color-mix(in srgb, var(--rc) 70%, transparent) 40%, transparent 70%); z-index: 3; pointer-events: none; }
+.chest-stage.opened .chest-rays { opacity: 1; animation: rays-spin 6s linear infinite; }
+.chest-stage.opened .chest-flash { animation: flash-out 0.7s ease-out; }
+.chest-stage.opened .chest-open-img { transform: scale(0.85); transition: transform 0.3s; }
+@keyframes rays-spin { to { transform: rotate(360deg); } }
+@keyframes flash-out { 0% { opacity: 1; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+.loot-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; width: 100%; }
+.loot-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 12px; text-align: center; font-size: 12px; background: color-mix(in srgb, var(--rc) 14%, rgba(0, 0, 0, 0.4)); border: 1px solid color-mix(in srgb, var(--rc) 60%, transparent); animation: loot-pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.loot-item.rarity-legendary, .loot-item.rarity-mythic, .loot-item.rarity-ancient { box-shadow: 0 0 16px var(--rc); }
+@keyframes loot-pop { from { transform: scale(0.2) translateY(30px); opacity: 0; } }
+.loot-img { width: 56px; height: 56px; object-fit: contain; }
+.loot-emoji { font-size: 40px; line-height: 56px; }
+.chest-foot { opacity: 0; transition: opacity 0.3s; }
+.chest-foot.show { opacity: 1; }

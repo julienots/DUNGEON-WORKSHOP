@@ -64,5 +64,7 @@ export const PASSIVES = {
   boss_dragon: { name: 'Écailles anciennes', desc: 'Réduit les dégâts de 25%.', mods: { damageReduction: 0.25, crit: 0.1 } },
   boss_demon: { name: 'Seigneur infernal', desc: '+30% dégâts, brûlure à l’impact.', mods: { damageBonus: 0.3, onHit: { status: 'burn', chance: 0.5, duration: 4, power: 0.3 } } },
   boss_ice: { name: 'Cœur d’hiver', desc: 'Ralentit à l’impact, réduit les dégâts de 20%.', mods: { damageReduction: 0.2, onHit: { status: 'slow', chance: 0.6, duration: 3 } } },
+  boss_vampire: { name: 'Reine de sang', desc: 'Vole 20% des dégâts, esquive 10%.', mods: { lifesteal: 0.2, dodge: 0.1 } },
+  boss_undead_king: { name: 'Immortel', desc: 'Revient une fois à 40% PV, réduit les dégâts de 15%.', mods: { undying: 0.4, damageReduction: 0.15 } },
   boss_abyss: { name: 'Insondable', desc: 'Réduit les dégâts de 25%, régénère 1%/s.', mods: { damageReduction: 0.25, regen: 0.01 } },
 };

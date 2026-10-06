@@ -139,6 +139,7 @@ export class BattleScene extends Phaser.Scene {
     const S = this.S;
     if (!this.textures.exists(u.sprite)) {
       if (u.sprite.startsWith('summon_')) SpriteFactory.summonTexture({ family: u.family, sprite: u.sprite });
+      else if (u.sprite.includes('__')) SpriteFactory.monsterKey(u.sprite.slice(4).split('__')[0], u.sprite.split('__')[1]);
     }
     const shadow = this.add.image(0, 0, 'shadow');
     let aura = null;

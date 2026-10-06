@@ -6,6 +6,7 @@ import { ProgressBar } from '../ProgressBar.js';
 import { pickMonsters, teamPowerInfo } from './pickers.js';
 import { BOSS_TEAM_SIZE } from '../../systems/BossSystem.js';
 import { floorDef } from '../../data/floors.js';
+import { BOSS_LIST } from '../../data/bosses.js';
 import { ELEMENTS } from '../../data/elements.js';
 import { BIOMES, BIOME_IDS, biomeChangeCost } from '../../data/biomes.js';
 import { SpriteFactory } from '../../gfx/SpriteFactory.js';
@@ -45,7 +46,7 @@ export function showFloors() {
       for (const b of arena) wrap.appendChild(bossCard(b, () => ctx.ui.modals.close(entry)));
     }
     if (!gate.length && !g.bosses.floorBosses().length) {
-      const upcoming = [5, 10, 15, 20, 30, 40, 50].find((n) => n > g.state.floors.length);
+      const upcoming = BOSS_LIST.map((b) => b.floor).sort((a, b) => a - b).find((n) => n > g.state.floors.length);
       if (upcoming) wrap.appendChild(h('div.muted.small.center', `👑 Prochain gardien à l’étage ${upcoming}.`));
     }
     // Étages

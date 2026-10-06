@@ -1,5 +1,5 @@
 import { h } from '../dom.js';
-import { ctx } from '../context.js';
+import { ctx, sfx } from '../context.js';
 import { Button } from '../Button.js';
 import { CostView } from '../CostView.js';
 import { monsterImg } from '../MonsterCard.js';
@@ -25,6 +25,9 @@ export const ShopScreen = {
   render() {
     const g = ctx.game;
     const wrap = h('div.shop');
+    const nChests = g.collection.totalChests();
+    wrap.appendChild(h('button.collection-banner', { type: 'button', onclick: () => { sfx('click'); ctx.router.go('Collection'); } },
+      h('span.cb-icon', '🎁'), h('div', h('b', 'Coffres & Collection'), h('div.small', nChests ? `${nChests} coffre${nChests > 1 ? 's' : ''} à ouvrir !` : 'Coffres rares à anciens, skins, décorations')), h('span', '›')));
     // Coffre gratuit
     const ready = Date.now() >= g.shop.freeChestReadyAt();
     wrap.appendChild(h(`div.shop-card.free${ready ? '.ready' : ''}`,
