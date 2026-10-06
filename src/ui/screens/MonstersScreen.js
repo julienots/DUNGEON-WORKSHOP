@@ -190,7 +190,7 @@ export function openMonsterDetail(uid) {
     const muts = g.monsters.mutations(m);
     const canMut = g.monsters.canMutate(m);
     const hasRoom = g.dungeon.hasPerk('mutation');
-    wrap.appendChild(h('div.cell-section', h('div.cell-section-title', `🧬 Mutations ${muts.length}/${MAX_MUTATIONS}`),
+    wrap.appendChild(h('div.cell-section', h('div.cell-section-title', `🧬 Mutations ${muts.length}/${g.monsters.maxMutations()}`),
       muts.length
         ? h('div.trait-row', muts.map((mu) => h(`div.trait-chip.rarity-${mu.rarity}`, { style: { '--rc': RARITY_INFO[mu.rarity].color }, title: mu.desc, onclick: () => ctx.ui.toasts.show(`${mu.name} (niv. ${mu.level}/${MUTATION_MAX_LEVEL}) : ${mu.desc}`, { icon: mu.icon }) },
           h('span.trait-icon', mu.icon), h('span.trait-name', `${mu.name} ${'I'.repeat(mu.level)}`))))

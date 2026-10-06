@@ -3120,3 +3120,7 @@ body.sheet-open .zoom-ctl { display: none; }
 .lore-page.locked { opacity: 0.6; }
 .lore-page.locked summary { color: var(--muted); font-family: var(--font-body); }
 .lore-text { margin: 8px 0 0; font-style: italic; line-height: 1.5; color: #f1e2c6; }
+.tier-ladder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; font-size: 12px; font-weight: 800; color: var(--muted); margin: 4px 0 8px; }
+.tier-orb { background: radial-gradient(circle, color-mix(in srgb, var(--mc) 70%, #fff), color-mix(in srgb, var(--mc) 35%, #000)) !important; box-shadow: 0 0 24px var(--mc); }
+.req-row { padding: 4px 0; font-size: 13px; color: var(--muted); }
+.req-row.good { color: var(--good); }

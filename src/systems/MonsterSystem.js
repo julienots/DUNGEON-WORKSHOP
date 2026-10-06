@@ -199,11 +199,15 @@ export class MonsterSystem {
     return (m.mutations || []).reduce((a, x) => a + (x.level || 1), 0);
   }
 
+  maxMutations() {
+    return MAX_MUTATIONS + (this.game.tiers?.hasUnlock('mutation_slot') ? 1 : 0);
+  }
+
   canMutate(m) {
     if (!m) return { ok: false, reason: 'Monstre introuvable' };
     if (!this.game.dungeon.hasPerk('mutation')) return { ok: false, reason: 'Construisez une Salle de mutation.' };
     const list = m.mutations || [];
-    const full = list.length >= MAX_MUTATIONS && list.every((x) => x.level >= MUTATION_MAX_LEVEL);
+    const full = list.length >= this.maxMutations() && list.every((x) => x.level >= MUTATION_MAX_LEVEL);
     if (full) return { ok: false, reason: 'Mutations au maximum' };
     const cost = mutationCost(this.mutationLevels(m));
     if (!this.game.economy.canAfford(cost)) return { ok: false, reason: 'Ressources insuffisantes', cost };
@@ -213,7 +217,7 @@ export class MonsterSystem {
   /** Tire une mutation (pondérée) : nouvelle mutation, ou niveau supplémentaire d'une mutation existante. */
   rollMutation(m, rng) {
     const list = m.mutations || [];
-    const canNew = list.length < MAX_MUTATIONS;
+    const canNew = list.length < this.maxMutations();
     const pool = MUTATION_IDS.filter((id) => {
       const has = list.find((x) => x.id === id);
       return has ? has.level < MUTATION_MAX_LEVEL : canNew;
@@ -345,7 +349,8 @@ export class MonsterSystem {
   evolutionCheck(m, evo) {
     const target = getSpecies(evo.to);
     const rule = EVOLUTION_RULES[target.rarity] || EVOLUTION_RULES.rare;
-    const cost = this.game.economy.applyCostMods(rule.cost, 'evolveCost');
+    let cost = this.game.economy.applyCostMods(rule.cost, 'evolveCost');
+    if (this.game.tiers?.hasUnlock('evolve_discount')) cost = scaleCost(cost, 0.75);
     const reasons = [];
     if (m.level < rule.level) reasons.push(`Niveau ${rule.level} requis`);
     if (this.game.dungeon.countRooms('lab') === 0) reasons.push('Un Laboratoire est requis');

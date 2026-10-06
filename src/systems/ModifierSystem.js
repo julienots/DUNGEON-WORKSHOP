@@ -9,7 +9,7 @@ export const MOD_KEYS = [
   'offlineHours', 'raidRate', 'roomCapacity', 'rosterSize', 'levelCap', 'levelCost', 'evolveCost',
   'roomCost', 'floorCost', 'expandCost', 'globalCost', 'researchSpeed', 'researchSlots',
   'summonQuality', 'summonLuck', 'summonTier', 'treasuryCapacity', 'theftReduction', 'productionGain',
-  'elementPower', 'skillCooldown', 'bossDamage', 'startingResources', 'floorSize',
+  'elementPower', 'skillCooldown', 'bossDamage', 'startingResources', 'floorSize', 'masterEssenceGain',
 ];
 
 /**
@@ -59,6 +59,8 @@ export class ModifierSystem {
     }
     // Salles à bonus globaux (V2 : Salle du maître)
     if (this.game.dungeon) for (const [k, v] of Object.entries(this.game.dungeon.globalRoomMods())) m[k] = (m[k] || 0) + v;
+    // Prestige 2.0 (Renaissance, Transcendance, Maître dimensionnel)
+    if (this.game.tiers) for (const e of this.game.tiers.effects()) m[e.mod] = (m[e.mod] || 0) + e.value;
     // Maîtrise (V2)
     if (this.game.progression) for (const e of this.game.progression.effects()) m[e.mod] = (m[e.mod] || 0) + e.value;
     // Niveau du Maître

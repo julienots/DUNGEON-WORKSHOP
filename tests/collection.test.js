@@ -84,3 +84,27 @@ test('codex 2.0 et lore : 8 catégories, déblocage par la progression', async (
   g.codex.checkLore();
   assert.equal(pages.length, n, 'pas de doublon');
 });
+
+test('prestige 2.0 : conditions, réinitialisation, bonus permanents et déblocages', () => {
+  const g = newGame();
+  assert.equal(g.tiers.canPerform('rebirth').ok, false);
+  g.state.prestige.count = 3;
+  g.state.prestige.totalMasterEssence = 5000;
+  g.state.prestige.masterEssence = 100;
+  g.state.prestige.upgrades.pr_wealth = 3;
+  for (let i = 1; i < 15; i++) g.state.floors.push({ ...g.state.floors[0], number: i + 1, cells: { '0,0': { room: 'entrance', level: 1, trap: null } } });
+  const gold0 = g.mods.get().goldGain;
+  const r = g.tiers.perform('rebirth');
+  assert.ok(r.ok, r.reason);
+  assert.equal(g.state.floors.length, 1, 'ascension complète');
+  assert.equal(g.state.prestige.masterEssence, 0);
+  assert.deepEqual(g.state.prestige.upgrades, {});
+  assert.equal(g.tiers.count('rebirth'), 1);
+  assert.ok(g.tiers.t.rebirth.points >= 1);
+  assert.ok(g.mods.get().monsterHp >= 0.1, 'bonus permanent');
+  assert.ok(g.tiers.buy('rebirth', 'rb_monsters').ok);
+  // Transcendance : déblocage du 4e emplacement de mutation
+  g.tiers.t.transcendence.count = 1;
+  assert.equal(g.monsters.maxMutations(), 4);
+  assert.ok(gold0 >= 0);
+});

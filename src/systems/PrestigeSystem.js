@@ -26,7 +26,8 @@ export class PrestigeSystem {
     const min = this.minFloor();
     if (floors < min) return 0;
     const goldFactor = 1 + Math.log10(Math.max(10, this.p.runGold)) / P.goldLogDiv;
-    return Math.floor(P.base * Math.pow(floors - min + 1, P.exponent) * goldFactor);
+    const bonus = 1 + (this.game.mods.get().masterEssenceGain || 0);
+    return Math.floor(P.base * Math.pow(floors - min + 1, P.exponent) * goldFactor * bonus);
   }
 
   canAscend() {
@@ -46,15 +47,34 @@ export class PrestigeSystem {
     if (!check.ok) return check;
     const g = this.game;
     const s = g.state;
-    g.raids.reset();
     this.p.count++;
     this.p.masterEssence += check.gain;
     this.p.totalMasterEssence += check.gain;
     this.p.runGold = 0;
     g.stats.add('ascensions', 1);
 
+    this.resetRun();
+    g.bus.emit('ascended', check.gain);
+    g.bus.emit('floorsChanged');
+    g.bus.emit('dungeonChanged', 0);
+    g.bus.emit('monstersChanged');
+    g.bus.emit('resources');
+    g.bus.emit('sfx', 'ascend');
+    g.requestSave(true);
+    return { ok: true, gain: check.gain };
+  }
+
+  /**
+   * Réinitialisation commune à tous les paliers de prestige (Ascension, Renaissance, Transcendance…) :
+   * étages, salles, pièges, ressources de partie (sauf cristaux), recherche (sauf Magie), trésor, niveaux des monstres.
+   */
+  resetRun() {
+    const g = this.game;
+    const s = g.state;
+    g.raids.reset();
     // Ce qui est réinitialisé : étages, salles, pièges, ressources (sauf cristaux), recherche, trésorerie, niveaux des monstres.
-    const heritage = s.prestige.upgrades.pr_heritage || 0;
+    // Héritage (Ascension) + Départ fulgurant (Renaissance) : ressources de départ ×2 par niveau
+    const heritage = (s.prestige.upgrades.pr_heritage || 0) + (s.prestige.tiers?.rebirth?.upgrades?.rb_start || 0);
     const startMult = Math.pow(2, heritage) * (1 + this.p.count * 0.5);
     const crystals = s.resources.crystals;
     for (const k of RUN_RESOURCE_KEYS) s.resources[k] = Math.round(ECONOMY.resources[k].startingAmount * startMult);
@@ -79,14 +99,6 @@ export class PrestigeSystem {
     }
     g.viewFloor = 0;
     g.mods.invalidate();
-    g.bus.emit('ascended', check.gain);
-    g.bus.emit('floorsChanged');
-    g.bus.emit('dungeonChanged', 0);
-    g.bus.emit('monstersChanged');
-    g.bus.emit('resources');
-    g.bus.emit('sfx', 'ascend');
-    g.requestSave(true);
-    return { ok: true, gain: check.gain };
   }
 
   upgradeLevel(id) {

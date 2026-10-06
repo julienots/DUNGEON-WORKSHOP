@@ -28,6 +28,7 @@ import { RunSystem } from '../systems/RunSystem.js';
 import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 import { BiomeSystem } from '../systems/BiomeSystem.js';
 import { CollectionSystem } from '../systems/CollectionSystem.js';
+import { PrestigeTierSystem } from '../systems/PrestigeTierSystem.js';
 
 /**
  * GAME CORE
@@ -64,6 +65,7 @@ export class Game {
     this.runs = new RunSystem(this);
     this.biomes = new BiomeSystem(this);
     this.collection = new CollectionSystem(this);
+    this.tiers = new PrestigeTierSystem(this);
     this.progression = new ProgressionSystem(this);
 
     this.viewFloor = 0;
