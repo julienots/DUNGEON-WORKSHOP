@@ -4,6 +4,9 @@
  * et mesure le rythme de progression (heures pour atteindre chaque étage, etc.).
  * Usage : node scripts/bot.mjs [heures=40] [sessionMinutes=0]
  *   sessionMinutes > 0 : le joueur joue N minutes puis s'absente (progression hors ligne) 3h.
+ * Variables d'environnement :
+ *   NOASC=1     jamais d'Ascension
+ *   STALL=h     n'ascensionne (ou ne passe en Renaissance) qu'après h heures sans nouvel étage (défaut : dès que possible)
  */
 import { Game } from '../src/core/Game.js';
 import { MemoryStorage } from '../src/systems/SaveSystem.js';
@@ -24,6 +27,8 @@ const log = [];
 const milestones = {};
 const t0 = now;
 const hours = () => (now - t0) / 3600000;
+const STALL = Number(process.env.STALL || 0);
+let lastFloorAt = now;
 
 function note(msg) {
   log.push(`[${hours().toFixed(1)}h] ${msg}`);
@@ -66,6 +71,7 @@ function botActions() {
     const r = g.dungeon.unlockNextFloor();
     if (r.ok) {
       milestones[next.number] = hours();
+      lastFloorAt = now;
       note(`Étage ${next.number} débloqué`);
     }
   }
@@ -173,9 +179,20 @@ function botActions() {
       if (!cur || g.equipment.itemPower(best) > g.equipment.itemPower(cur)) g.equipment.equip(best.uid, m.uid);
     }
   }
-  // Ascension dès que possible (si gain intéressant)
+  // Ascension (dès que possible, ou en cas de stagnation avec STALL)
+  const stalled = now - lastFloorAt >= STALL * 3600000;
+  const rb = g.tiers.canPerform('rebirth');
+  if (!process.env.NOASC && stalled && rb.ok) {
+    note(`RENAISSANCE (+${rb.gain} braises, étage ${s.floors.length})`);
+    milestones[`rebirth_${g.tiers.count('rebirth') + 1}`] = hours();
+    g.tiers.perform('rebirth');
+    lastFloorAt = now;
+    for (const u of ['rb_monsters', 'rb_essence', 'rb_start', 'rb_research']) while (g.tiers.buy('rebirth', u).ok);
+    return;
+  }
   const asc = g.prestige.canAscend();
-  if (!process.env.NOASC && asc.ok && asc.gain >= 20) {
+  if (!process.env.NOASC && stalled && asc.ok && asc.gain >= 20) {
+    lastFloorAt = now;
     note(`ASCENSION (+${asc.gain} Essence du Maître)`);
     milestones[`ascension_${s.prestige.count + 1}`] = hours();
     g.prestige.ascend();
