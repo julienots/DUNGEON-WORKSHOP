@@ -88,8 +88,8 @@ function botActions() {
   }
   // Épargne : si seul le coût bloque l'étage suivant, on limite les dépenses de matériaux
   const saving = next.reasons.length === 0 && !next.affordable;
-  // Construire : salle de combat puis trésor/labo sur chaque étage
-  for (let fi = 0; fi < s.floors.length && !saving; fi++) {
+  // Construire : salle de combat puis trésor/labo sur chaque étage (les plus profonds d'abord)
+  for (let fi = s.floors.length - 1; fi >= 0 && !saving; fi--) {
     const f = s.floors[fi];
     const wanted = ['combat', 'combat', 'lab', 'treasure', 'combat', 'lava', 'toxic', 'crypt', 'storm', 'grove', 'combat', 'treasure', 'mine', 'combat', 'sanctum', 'dimensional', 'lair'];
     for (const room of wanted) {
@@ -134,6 +134,23 @@ function botActions() {
       }
     }
   }
+  // Redéploiement : les monstres les plus forts des étages peu profonds descendent remplir les 2 derniers étages
+  for (let target = s.floors.length - 1; target >= Math.max(0, s.floors.length - 2); target--) {
+    const donors = s.monsters
+      .filter((m) => m.location && m.location.floor < s.floors.length - 3)
+      .sort((a, b) => g.monsters.power(b) - g.monsters.power(a));
+    for (const r of g.dungeon.roomCells(target)) {
+      while (donors.length && g.dungeon.roomCapacity(r.cell) > g.monsters.monstersAt(target, r.x, r.y).length) {
+        const m = donors.shift();
+        const from = m.location;
+        g.monsters.unassign(m.uid);
+        if (!g.monsters.assign(m.uid, target, r.x, r.y).ok) {
+          g.monsters.assign(m.uid, from.floor, from.x, from.y);
+          break;
+        }
+      }
+    }
+  }
   // Évolutions
   for (const m of s.monsters) {
     const opt = g.monsters.evolutionOptions(m).find((e) => e.ok);
@@ -150,8 +167,8 @@ function botActions() {
     if ((c.gold || 0) > budget) continue;
     if (g.monsters.levelUp(m.uid).ok) budget -= c.gold || 0;
   }
-  // Pièges
-  for (let fi = 0; fi < s.floors.length && !saving; fi++) {
+  // Pièges (étages profonds d'abord)
+  for (let fi = s.floors.length - 1; fi >= 0 && !saving; fi--) {
     for (const r of g.dungeon.roomCells(fi)) {
       if (!ROOMS[r.cell.room].trapSlots) continue;
       if (!r.cell.trap) {
