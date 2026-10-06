@@ -111,6 +111,7 @@ export class MonsterSystem {
     let crit = BALANCE.combat.baseCrit;
     let flat = { hp: 0, attack: 0, defense: 0, speed: 0, crit: 0, lifesteal: 0, attackPct: 0, hpPct: 0 };
     const equipMods = [];
+    let biomeMods = null;
 
     for (const itemUid of Object.values(m.equipment || {})) {
       const it = this.game.equipment.get(itemUid);
@@ -151,6 +152,13 @@ export class MonsterSystem {
           atk *= 1 + rd.elementBonus.atk * lvlMult;
         }
       }
+      // Biome (V2) : affinité élémentaire
+      if (room.fi !== undefined && this.game.biomes) {
+        const bb = this.game.biomes.monsterBonus(room.fi, sp.element);
+        hp *= 1 + bb.affinity;
+        atk *= 1 + bb.affinity;
+        biomeMods = bb.mods;
+      }
       // Synergies de salles (V2)
       const eff = room.eff;
       if (eff) {
@@ -174,7 +182,7 @@ export class MonsterSystem {
     spd *= 1 + tr.stats.spd + mu.stats.spd;
 
     const passive = PASSIVES[sp.passive]?.mods || {};
-    const combined = mergeMods(passive, ...tr.mods, ...mu.mods, ...equipMods, ...(room?.eff?.mods || []), flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
+    const combined = mergeMods(passive, ...tr.mods, ...mu.mods, ...equipMods, ...(room?.eff?.mods || []), biomeMods, flat.lifesteal ? { lifesteal: flat.lifesteal } : null);
     return {
       hp: Math.round(hp), atk: Math.round(atk), def: Math.round(def), spd: +spd.toFixed(1), crit,
       mods: combined,

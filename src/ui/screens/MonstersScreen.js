@@ -110,6 +110,15 @@ export function openMonsterDetail(uid) {
         h('span.trait-icon', t.icon), h('span.trait-name', t.name)))));
     }
 
+    // Affinité de biome (V2)
+    if (m.location) {
+      const b = g.biomes.get(m.location.floor);
+      const aff = b.element === sp.element;
+      wrap.appendChild(h(`div.small.center${aff ? '.good' : '.muted'}`, aff
+        ? `${b.icon} Affinité ${b.name} : +10 % PV et attaque sur cet étage`
+        : `${b.icon} Étage ${m.location.floor + 1} (${b.name}) : affinité pour les monstres ${ELEMENTS[b.element].icon} ${ELEMENTS[b.element].name}`));
+    }
+
     // Niveau
     const lv = g.monsters.canLevelUp(m);
     wrap.appendChild(h('div.row.gap.wrap.center',

@@ -90,6 +90,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   cleanup() {
+    clearTimeout(this.comboTimer);
     this.hud?.remove();
     if (this.rt) this.rt.locked = false;
     if (this.data_?.mode === 'boss' || this.data_?.mode === 'run') ctx.audio?.playMusic('dungeon');
@@ -226,6 +227,7 @@ export class BattleScene extends Phaser.Scene {
       if (this.rt) this.rt.elapsed = Math.max(this.rt.elapsed, ev.t);
       if (this.handle(ev)) return;
     }
+    this.expireStatuses(now);
     if (this.idx >= this.events_.length) this.finish();
   }
 
@@ -286,8 +288,20 @@ export class BattleScene extends Phaser.Scene {
       case 'status': {
         const v = this.views.get(ev.tgt);
         if (!v) break;
-        v.statuses.set(ev.id, ev.t);
+        // Durée réelle transmise par le moteur de combat (V2)
+        v.statuses.set(ev.id, ev.t + (ev.dur ?? 5));
         v.refreshStatus();
+        break;
+      }
+      case 'reaction': {
+        if (instant) break;
+        const v = this.views.get(ev.tgt);
+        if (!v) break;
+        this.showReaction(v, ev);
+        break;
+      }
+      case 'combo': {
+        if (ev.side === 'A') this.showCombo(ev, instant);
         break;
       }
       case 'trap': {
@@ -349,20 +363,55 @@ export class BattleScene extends Phaser.Scene {
       default:
         break;
     }
-    // Expiration visuelle des statuts (approximation : 5s)
-    if (ev.t !== undefined) {
-      for (const v of this.views.values()) {
-        let changed = false;
-        for (const [id, t] of v.statuses) {
-          if (ev.t - t > 5) {
-            v.statuses.delete(id);
-            changed = true;
-          }
-        }
-        if (changed) v.refreshStatus();
-      }
-    }
+    if (ev.t !== undefined) this.expireStatuses(ev.t);
     return false;
+  }
+
+  /** Retire les icônes de statut expirés (fin réelle connue grâce à la durée). */
+  expireStatuses(now) {
+    for (const v of this.views.values()) {
+      let changed = false;
+      for (const [id, until] of v.statuses) {
+        if (now >= until) {
+          v.statuses.delete(id);
+          changed = true;
+        }
+      }
+      if (changed) v.refreshStatus();
+    }
+  }
+
+  /** Réaction élémentaire : onde de choc, éclair de couleur, grand texte. */
+  showReaction(v, ev) {
+    const S = this.S;
+    const col = Phaser.Display.Color.HexStringToColor(ev.color || '#ffffff').color;
+    sfx('synergy');
+    const ring = this.add.image(v.x(), v.y(), 'p_ring').setTint(col).setBlendMode(Phaser.BlendModes.ADD).setDepth(60).setDisplaySize(v.size * 0.4, v.size * 0.4);
+    this.tweens.add({ targets: ring, displayWidth: v.size * 2.4, displayHeight: v.size * 2.4, alpha: 0, duration: 520, ease: 'Cubic.easeOut', onComplete: () => ring.destroy() });
+    const glow = this.add.image(v.x(), v.y(), 'glow').setTint(col).setBlendMode(Phaser.BlendModes.ADD).setDepth(59).setDisplaySize(v.size * 2, v.size * 2).setAlpha(0.9);
+    this.tweens.add({ targets: glow, alpha: 0, duration: 650, onComplete: () => glow.destroy() });
+    this.fx.burst(v.x(), v.y(), col, 18);
+    this.cameras.main.shake(120, 0.004);
+    const t = this.add.text(this.scale.width / 2, this.scale.height * 0.3, `${ev.icon} ${ev.name.toUpperCase()} !`, {
+      fontFamily: FONT_TITLE, fontStyle: 'bold', fontSize: `${Math.round(24 * S)}px`, color: ev.color || '#ffffff', stroke: '#1b1216', strokeThickness: 7 * S, align: 'center',
+    }).setOrigin(0.5).setDepth(120).setScale(0.4);
+    this.tweens.add({ targets: t, scale: 1, duration: 260, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: t, alpha: 0, y: t.y - 30 * S, delay: 900, duration: 400, onComplete: () => t.destroy() });
+  }
+
+  /** Compteur de combo des monstres. */
+  showCombo(ev, instant) {
+    if (!this.comboEl) {
+      this.comboEl = h('div.combo-counter');
+      this.hud.appendChild(this.comboEl);
+    }
+    this.comboEl.innerHTML = `<b>${ev.count}</b><span>${ev.name} · +${Math.round(ev.bonus * 100)}% dégâts</span>`;
+    this.comboEl.classList.remove('pop');
+    void this.comboEl.offsetWidth;
+    this.comboEl.classList.add('pop', 'show');
+    clearTimeout(this.comboTimer);
+    this.comboTimer = setTimeout(() => this.comboEl?.classList.remove('show'), 2200);
+    if (!instant) sfx('levelup');
   }
 
   skip() {

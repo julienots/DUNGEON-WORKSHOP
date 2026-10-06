@@ -53,10 +53,18 @@ export class RaidSystem {
     const rng = new RNG(seed);
     const party = g.adventurers.generateParty(fnum, floor.threat, rng);
     const heroes = party.members.map(makeUnit);
-    const battle = new Battle({ rng, record, sideMods: this.sideMods() });
+    // Biome de l'étage (V2) : règles de combat, anomalies
+    const brules = g.biomes.rules(fi, seed);
+    const bsm = g.biomes.sideMods(fi, brules);
+    const base = this.sideMods();
+    const sideMods = {
+      A: { ...base.A, ...bsm.A, skillCooldown: (base.A.skillCooldown || 0) + (bsm.A.skillCooldown || 0) },
+      B: { ...base.B, ...bsm.B },
+    };
+    const battle = new Battle({ rng, record, sideMods });
     battle.addUnits(heroes);
     const tour = g.dungeon.computeTour(fi);
-    battle.emit({ type: 'spawn', party: { name: party.name, level: party.level }, units: heroes.map(snapshotUnit) });
+    battle.emit({ type: 'spawn', party: { name: party.name, level: party.level }, units: heroes.map(snapshotUnit), anomaly: brules.anomaly ? { name: brules.anomaly.name, icon: brules.anomaly.icon } : null });
 
     const cleared = new Set();
     const trapReady = {};
@@ -98,7 +106,7 @@ export class RaidSystem {
         const mons = g.monsters.monstersAt(fi, x, y);
         if (mons.length) {
           const eff = g.dungeon.roomEffects(fi, x, y);
-          const room = { roomId: cell.room, level: cell.level, eff };
+          const room = { roomId: cell.room, level: cell.level, eff, fi };
           const units = mons.map((m) => makeUnit(g.monsters.toUnit(m, room)));
           if (eff.list.length) battle.stats.synergyTriggers += eff.list.length;
           for (const m of mons) if (eff.xp) xpBonus[m.uid] = 1 + eff.xp;
@@ -107,7 +115,7 @@ export class RaidSystem {
           if (trapDef) battle.addTrap({ ...trapDef, nextFire: trapReady[key] || 0 });
           const rd = ROOMS[cell.room];
           battle.emit({ type: 'combatStart', x, y });
-          battle.start([...(rd.onCombat || []), ...eff.onCombat], rd.allyStatuses || []);
+          battle.start([...(rd.onCombat || []), ...eff.onCombat, ...(brules.onCombat || [])], rd.allyStatuses || []);
           const res = battle.run(R.maxCombatTime);
           if (trapDef) trapReady[key] = battle.traps[0]?.nextFire || trapReady[key];
           for (const u of units) {
@@ -153,6 +161,7 @@ export class RaidSystem {
       if (rng.chance(RW.equipmentDropChance * dropMult * (h.elite ? 4 : 1))) itemSeeds.push(rng.int(1, 2 ** 30));
       monsterXp += RW.monsterXpPerKill * Math.pow(RW.monsterXpGrowth, h.level - 1) * (h.elite ? 2 : 1);
     }
+    for (const k of Object.keys(rewards)) rewards[k] *= g.biomes.rewardMult(fi, k);
     const wiped = kills === heroes.length;
     let goldBonus = g.dungeon.rewardBonus(fi);
     for (const uid of participants) {

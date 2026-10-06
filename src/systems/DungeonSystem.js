@@ -24,8 +24,11 @@ export class DungeonSystem {
     return this.floors[fi];
   }
 
+  /** Définition de l'étage ; le thème visuel suit le biome choisi (V2). */
   def(fi) {
-    return floorDef(fi + 1);
+    const d = floorDef(fi + 1);
+    const b = this.game.biomes && this.floor(fi) ? this.game.biomes.get(fi) : null;
+    return b ? { ...d, theme: b.theme, biome: this.game.biomes.id(fi) } : d;
   }
 
   cell(fi, x, y) {
@@ -545,7 +548,7 @@ export class DungeonSystem {
         const lvl = Math.pow(1.15, r.cell.level - 1) * Math.pow(floorEconomyScale(i + 1), 0.6);
         for (const [k, v] of Object.entries(rd.production)) {
           // Les monnaies rares ne suivent pas l'économie de l'étage
-          const scale = k === 'dimensionalFragments' || k === 'legendaryEssence' ? 1 + 0.02 * (r.cell.level - 1) : lvl;
+          const scale = k === 'dimensionalFragments' || k === 'legendaryEssence' ? 1 + 0.02 * (r.cell.level - 1) : lvl * (this.game.biomes?.productionMult(i, k) || 1);
           out[k] = (out[k] || 0) + v * scale * prod * syn;
         }
       }

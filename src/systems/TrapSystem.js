@@ -149,7 +149,7 @@ export class TrapSystem {
     }
     // Synergie salle + piège (V2), ex. Chambre toxique + gaz toxique
     const roomEff = this.game.dungeon.roomEffects(fi, x, y);
-    damage *= 1 + roomEff.trapPower;
+    damage *= 1 + roomEff.trapPower + (this.game.biomes?.trapPower(fi, t.element) || 0);
     return {
       trapId: t.id, name: t.name, cell: { x, y }, level: cell.trap.level + floorDef(fi + 1).level,
       damage: Math.round(damage), cooldown: Math.max(1, t.cooldown * (1 + mods.trapCooldown)),

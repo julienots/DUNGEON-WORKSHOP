@@ -26,6 +26,7 @@ import { SaveSystem } from '../systems/SaveSystem.js';
 import { TutorialSystem } from '../systems/TutorialSystem.js';
 import { RunSystem } from '../systems/RunSystem.js';
 import { ProgressionSystem } from '../systems/ProgressionSystem.js';
+import { BiomeSystem } from '../systems/BiomeSystem.js';
 
 /**
  * GAME CORE
@@ -60,6 +61,7 @@ export class Game {
     this.saves = new SaveSystem(this, storage);
     this.tutorial = new TutorialSystem(this);
     this.runs = new RunSystem(this);
+    this.biomes = new BiomeSystem(this);
     this.progression = new ProgressionSystem(this);
 
     this.viewFloor = 0;

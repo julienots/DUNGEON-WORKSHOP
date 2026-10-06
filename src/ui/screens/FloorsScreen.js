@@ -7,6 +7,7 @@ import { pickMonsters, teamPowerInfo } from './pickers.js';
 import { BOSS_TEAM_SIZE } from '../../systems/BossSystem.js';
 import { floorDef } from '../../data/floors.js';
 import { ELEMENTS } from '../../data/elements.js';
+import { BIOMES, BIOME_IDS, biomeChangeCost } from '../../data/biomes.js';
 import { SpriteFactory } from '../../gfx/SpriteFactory.js';
 import { formatShort } from '../../utils/format.js';
 
@@ -67,6 +68,7 @@ export function showFloors() {
         h('div.floor-card-title', `${d.tierName}`),
         h('div.small', `🏠 ${rooms} salles · 👹 ${monsters} · 🛡️ ${f.raidsDefended}/${total} raids`),
         h('div.small', `Menace ${f.threat}/${d.maxThreat} · Aventuriers niv. ~${g.adventurers.partyLevel(i + 1, f.threat)}`),
+        h('div.small.biome-line', `${g.biomes.get(i).icon} ${g.biomes.get(i).name}`, h('button.biome-change', { type: 'button', onclick: (e) => { e.stopPropagation(); showBiomePicker(i, () => ctx.ui.modals.refresh(entry, build())); } }, 'Changer')),
         ProgressBar(f.threat / d.maxThreat, { color: 'red', height: 6 }),
       ),
       h('div.floor-card-go', i === g.viewFloor ? '👁️' : '›'),
@@ -139,4 +141,41 @@ export function showBossResult(result, onClose) {
     ...items,
     Button('Continuer', { variant: 'primary', block: true, onClick: () => ctx.ui.modals.close() }),
   ), { title: result.win ? 'Victoire !' : 'Défaite…', icon: result.win ? '🏆' : '💀', onClose });
+}
+
+/** Choix du biome d'un étage (V2). */
+export function showBiomePicker(fi, onDone) {
+  const g = ctx.game;
+  let entry;
+  const build = () => {
+    const wrap = h('div.choice-list');
+    const unlocked = g.biomes.unlocked();
+    const cost = biomeChangeCost(fi + 1);
+    if (!cost.dimensionalFragments) delete cost.dimensionalFragments;
+    wrap.appendChild(h('p.small', 'Chaque biome change les règles de l’étage : élément favorisé (affinité +10 % pour vos monstres de cet élément), production, butin et effets spéciaux.'));
+    for (const id of BIOME_IDS) {
+      const b = BIOMES[id];
+      const cur = g.biomes.id(fi) === id;
+      const lock = !unlocked.includes(id);
+      wrap.appendChild(h(`button.choice-card${cur ? '.selected' : ''}${lock ? '.locked' : ''}`, {
+        type: 'button',
+        onclick: () => {
+          if (cur) return;
+          if (lock) return ctx.ui.toasts.show(`Atteignez l’étage ${b.unlockFloor} pour ce biome.`, { icon: '🔒' });
+          const r = g.biomes.change(fi, id);
+          if (!r.ok) return ctx.ui.toasts.show(r.reason, { icon: '⛔', type: 'error' });
+          sfx('unlock');
+          ctx.ui.toasts.show(`Étage ${fi + 1} : ${b.icon} ${b.name}`, { icon: '🗺️', type: 'success' });
+          ctx.ui.modals.close(entry);
+          onDone?.();
+        },
+      },
+      h('div.choice-icon', lock ? '🔒' : b.icon),
+      h('div.choice-body', h('b', `${b.name}${cur ? ' (actuel)' : ''}`), h('div.small', `${ELEMENTS[b.element].icon} ${ELEMENTS[b.element].name} · ${b.desc}`), lock ? h('div.small.muted', `Étage ${b.unlockFloor} requis`) : null),
+      ));
+    }
+    wrap.appendChild(h('div.small.muted.center', h('span', 'Coût du changement : '), CostView(cost, { compact: true })));
+    return wrap;
+  };
+  entry = ctx.ui.modals.open(build(), { title: `Biome de l’étage ${fi + 1}`, icon: '🗺️', cls: 'modal-wide' });
 }

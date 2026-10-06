@@ -436,6 +436,27 @@ export class FxKit {
         this.emit('smoke', c.x, c.y, 12, 0x4a2a7a);
         sfx('shadow');
         break;
+      case 'roots':
+        this.emit('shard', c.x, c.y + T * 0.2, 10, 0x6a4a2a);
+        this.emit('spark', c.x, c.y, 6, 0x4fc36a);
+        break;
+      case 'blades':
+        this.ring(c.x, c.y, 0xd8dee8, T * 0.8, 260);
+        this.emit('shard', c.x, c.y, 8, 0xe8eef6);
+        sfx('slash');
+        break;
+      case 'mine':
+        this.ring(c.x, c.y, 0xff6a2b, T * 1.6, 500);
+        this.emit('ember', c.x, c.y, 24, 0xff8a2b);
+        this.emit('smoke', c.x, c.y, 10, 0x6a5a50);
+        this.scene.cameras.main.shake(260, 0.008);
+        sfx('explosion');
+        break;
+      case 'holy':
+        this.ring(c.x, c.y, 0xfff3b0, T * 1.1, 480);
+        this.emit('spark', c.x, c.y, 12, 0xfff3b0);
+        sfx('magic');
+        break;
       default:
         this.burst(c.x, c.y, tint, 8);
     }

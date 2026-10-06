@@ -2,6 +2,7 @@ import { BALANCE } from '../config/balance.js';
 import { SKILLS } from '../data/skills.js';
 import { STATUSES } from '../data/statuses.js';
 import { ELEMENTS } from '../data/elements.js';
+import { REACTIONS, AURA_DURATION, REACTION_COOLDOWN, COMBO_WINDOW, COMBO_TIERS, reactionKey } from '../data/reactions.js';
 
 /**
  * COMBAT SYSTEM
@@ -18,6 +19,9 @@ import { ELEMENTS } from '../data/elements.js';
  */
 
 const C = BALANCE.combat;
+
+/** Élément porté par certains statuts sans élément propre (pour les réactions). */
+const STATUS_ELEMENT = { freeze: 'ice', slow: 'ice', shock: 'lightning', blind: 'shadow' };
 
 export function elementMultiplier(attackEl, defendEl) {
   if (!attackEl || attackEl === 'neutral') return 1;
@@ -69,6 +73,7 @@ export class Battle {
    *  sideMods   { A: {critChance, elementPower, skillCooldown, bossDamage, elementDamage, healMult}, B: {...} }
    *             elementDamage : { fire: 0.5 } dégâts infligés par élément (règles de modes / biomes)
    *             healMult      : multiplicateur des soins reçus (0 = aucun soin)
+   *             spdMult       : multiplicateur de vitesse (biome Glacier…)
    */
   constructor(opts) {
     this.rng = opts.rng;
@@ -79,7 +84,9 @@ export class Battle {
     this.units = [];
     this.traps = [];
     this.t = 0;
-    this.stats = { crits: 0, trapTriggers: 0, synergyTriggers: 0, kills: [], damageA: 0, damageB: 0 };
+    this.stats = { crits: 0, trapTriggers: 0, synergyTriggers: 0, kills: [], damageA: 0, damageB: 0, reactions: 0, maxCombo: 0 };
+    // Combo des monstres : coups enchaînés sans pause (V2). Les aventuriers n'en bénéficient pas.
+    this.combo = { A: { count: 0, last: -99 } };
     this.summonSeq = 0;
   }
 
@@ -118,6 +125,7 @@ export class Battle {
       if (d.kind === 'stat' && d.stat === stat) v *= d.mult;
     }
     if (stat === 'atk' && u.mods.enrage && u.hp / u.maxHp < 0.4) v *= 1 + u.mods.enrage;
+    if (stat === 'spd') v *= this.sideMods[u.side]?.spdMult ?? 1;
     return v;
   }
 
@@ -374,6 +382,7 @@ export class Battle {
     dmg *= 1 - Math.min(0.75, tgt.mods.damageReduction || 0);
     // Résistances élémentaires (mutations, biomes…)
     if (tgt.mods.resist?.[element]) dmg *= 1 - Math.min(0.6, tgt.mods.resist[element]);
+    dmg *= 1 + this.comboBonus(src.side);
     let crit = false;
     if (this.rng.chance(src.crit + (sideMod.critChance || 0))) {
       crit = true;
@@ -382,6 +391,8 @@ export class Battle {
     }
     dmg = Math.max(1, Math.round(dmg));
     const dealt = this.dealRaw(src, tgt, dmg, { crit, element, eff: em > 1 ? 'strong' : em < 1 ? 'weak' : null });
+    this.countHit(src.side);
+    if (dealt > 0 && tgt.alive) this.elementHit(src, tgt, element);
 
     // Vol de vie
     const ls = (sk.lifesteal || 0) + (src.mods.lifesteal || 0);
@@ -414,7 +425,7 @@ export class Battle {
     else if (src) this.stats.damageB += dmg;
     this.emit({
       type: 'dmg', src: src ? src.id : null, tgt: tgt.id, amount: dmg, absorbed, hp: tgt.hp,
-      crit: !!info.crit, element: info.element, dot: !!info.dot, statusId: info.statusId, eff: info.eff, trap: info.trap, thorns: !!info.thorns,
+      crit: !!info.crit, element: info.element, dot: !!info.dot, reaction: info.reaction, statusId: info.statusId, eff: info.eff, trap: info.trap, thorns: !!info.thorns,
     });
     if (tgt.hp <= 0) {
       if (tgt.mods.undying && !tgt.usedUndying) {
@@ -464,7 +475,64 @@ export class Battle {
       if (d.kind === 'shield') s.amount = tgt.maxHp * (st.power || 0.1);
       tgt.statuses.push(s);
     }
-    this.emit({ type: 'status', tgt: tgt.id, id: st.id });
+    const cur = tgt.statuses.find((x) => x.id === st.id);
+    this.emit({ type: 'status', tgt: tgt.id, id: st.id, dur: +((cur ? cur.until : this.t + duration) - this.t).toFixed(2) });
+    const el = d.element || STATUS_ELEMENT[st.id];
+    if (el && tgt.alive) this.elementHit(src, tgt, el, srcAtk);
+  }
+
+  // ------------------------------------------------------------------ réactions et combos (V2)
+  comboBonus(side) {
+    const c = this.combo[side];
+    if (!c || this.t - c.last > COMBO_WINDOW) return 0;
+    let b = 0;
+    for (const tier of COMBO_TIERS) if (c.count >= tier.hits) b = tier.bonus;
+    return b;
+  }
+
+  countHit(side) {
+    const c = this.combo[side];
+    if (!c) return;
+    c.count = this.t - c.last <= COMBO_WINDOW ? c.count + 1 : 1;
+    c.last = this.t;
+    if (side === 'A') this.stats.maxCombo = Math.max(this.stats.maxCombo, c.count);
+    const tier = COMBO_TIERS.find((x) => x.hits === c.count);
+    if (tier) this.emit({ type: 'combo', side, count: c.count, name: tier.name, bonus: tier.bonus });
+  }
+
+  /** Aura élémentaire : un second élément différent déclenche une réaction. */
+  elementHit(src, tgt, element, srcAtk = null) {
+    if (!element || element === 'neutral' || this.inReaction) return;
+    const aura = tgt.aura;
+    if (aura && aura.until > this.t && aura.element !== element && this.t >= (tgt.reactionReady || 0)) {
+      const r = REACTIONS[reactionKey(aura.element, element)];
+      if (r) {
+        tgt.aura = null;
+        tgt.reactionReady = this.t + REACTION_COOLDOWN;
+        this.triggerReaction(r, reactionKey(aura.element, element), src, tgt, srcAtk);
+        return;
+      }
+    }
+    tgt.aura = { element, until: this.t + AURA_DURATION };
+  }
+
+  triggerReaction(r, id, src, tgt, srcAtk = null) {
+    this.inReaction = true;
+    this.stats.reactions++;
+    const sideMod = (src && this.sideMods[src.side]) || {};
+    const atk = src ? this.effStat(src, 'atk') : srcAtk || 10;
+    const power = 1 + (sideMod.elementPower || 0) + (src?.mods.reactionPower || 0);
+    this.emit({ type: 'reaction', id, name: r.name, icon: r.icon, color: r.color, src: src ? src.id : null, tgt: tgt.id });
+    if (r.burst) {
+      const dmg = Math.max(1, Math.round(atk * r.burst * power * (1 - Math.min(0.75, tgt.mods.damageReduction || 0))));
+      this.dealRaw(src, tgt, dmg, { element: 'neutral', reaction: id });
+      if (r.splash) {
+        for (const o of this.side(tgt.side)) if (o !== tgt) this.dealRaw(src, o, Math.max(1, Math.round(dmg * r.splash)), { element: 'neutral', reaction: id });
+      }
+    }
+    const targets = r.spread ? this.side(tgt.side) : [tgt];
+    for (const t of targets) for (const st of r.statuses || []) if (t.alive) this.applyStatus(src, t, { ...st, srcAtk: atk });
+    this.inReaction = false;
   }
 
   checkPhase(u) {

@@ -54,6 +54,8 @@ export const ROOM_SYNERGIES = [
   { id: 'storm_rune', name: 'Surtension', icon: '⚡🧨', room: 'storm', trap: 'lightning', effect: { trapPower: 0.25 }, desc: 'Salle des tempêtes + rune de foudre : +25% dégâts du piège.' },
   { id: 'crypt_shadow', name: 'Nuit éternelle', icon: '⚰️🧨', room: 'crypt', trap: 'shadow', effect: { trapPower: 0.25 }, desc: 'Crypte + ombres rampantes : +25% dégâts du piège.' },
   { id: 'dim_glyph', name: 'Glyphe amplifié', icon: '🌀🧨', room: 'dimensional', trap: 'arcane', effect: { trapPower: 0.3 }, desc: 'Salle dimensionnelle + glyphe magique : +30% dégâts du piège.' },
+  { id: 'grove_roots', name: 'Forêt vivante', icon: '🌿🧨', room: 'grove', trap: 'nature', effect: { trapPower: 0.3 }, desc: 'Bosquet + racines étrangleuses : +30% dégâts du piège.' },
+  { id: 'sanctum_seal', name: 'Sanctification', icon: '✨🧨', room: 'sanctum', trap: 'light', effect: { trapPower: 0.3 }, desc: 'Sanctuaire + sceau sacré : +30% dégâts du piège.' },
   { id: 'welcome', name: 'Comité d’accueil', icon: '🚪🧨', room: 'entrance', trap: 'any', effect: { trapPower: 0.2 }, desc: 'Piège à l’entrée : +20% dégâts.' },
 ];
 

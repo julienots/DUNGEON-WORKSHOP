@@ -65,6 +65,9 @@ export class DungeonScene extends Phaser.Scene {
     bus.on('hud:cancelMode', () => this.setMode('view'), this);
     bus.on('stateLoaded', () => this.changeFloor(this.g.viewFloor, true), this);
     bus.on('sheetChanged', () => this.refit(), this);
+    bus.on('biomeChanged', (fi) => {
+      if (fi === this.fi) this.changeFloor(this.fi, true);
+    }, this);
 
     // Zoom / déplacement (V2) : pincement à deux doigts, glisser, molette, boutons du HUD
     this.zoom = 1;
@@ -238,6 +241,32 @@ export class DungeonScene extends Phaser.Scene {
       this.dust.setScrollFactor(0);
       this.overLayer.add(this.dust);
     }
+    this.buildBiomeAmbience();
+  }
+
+  /** Ambiance du biome (V2) : voile coloré + particules propres (neige, braises, spores…). */
+  buildBiomeAmbience() {
+    const { width, height } = this.scale;
+    const b = this.g.biomes.get(this.fi);
+    this.biomeTint?.destroy();
+    this.biomeFx?.destroy();
+    this.biomeTint = this.add.rectangle(0, 0, width, height, b.tint, 0.11).setOrigin(0).setScrollFactor(0).setBlendMode(Phaser.BlendModes.ADD);
+    this.overLayer.add(this.biomeTint);
+    if (this.g.state.settings.quality === 'low' || this.g.state.settings.performanceMode) return;
+    const S = this.S;
+    const P = {
+      snow: { y: { min: -20, max: 0 }, speedY: { min: 20, max: 55 }, speedX: { min: -15, max: 15 }, tint: [0xffffff, 0xd8f4ff], scale: { start: 0.5 * S, end: 0.3 * S }, alpha: { start: 0.9, end: 0.2 }, lifespan: 12000, frequency: 140 },
+      embers: { y: height + 10, speedY: { min: -60, max: -25 }, speedX: { min: -10, max: 10 }, tint: [0xff6a2b, 0xffcc33], scale: { start: 0.6 * S, end: 0 }, alpha: { start: 0.9, end: 0 }, lifespan: 7000, frequency: 160, blendMode: 'ADD' },
+      spores: { y: { min: 0, max: height }, speedY: { min: -12, max: -4 }, speedX: { min: -6, max: 6 }, tint: [0x8fe04a, 0xc6ff4a], scale: { start: 0.5 * S, end: 0.2 * S }, alpha: { start: 0, end: 0.7, ease: 'Sine.easeInOut' }, lifespan: 8000, frequency: 260, blendMode: 'ADD' },
+      sand: { x: -10, y: { min: 0, max: height }, speedX: { min: 40, max: 90 }, speedY: { min: -5, max: 5 }, tint: [0xffd27a, 0xe0b060], scale: { start: 0.35 * S, end: 0.2 * S }, alpha: { start: 0.6, end: 0 }, lifespan: 9000, frequency: 120 },
+      leaves: { y: -10, speedY: { min: 18, max: 40 }, speedX: { min: -25, max: 25 }, tint: [0x6bc04a, 0xa0d050, 0xc08a3a], scale: { start: 0.55 * S, end: 0.4 * S }, rotate: { min: 0, max: 360 }, alpha: { start: 0.8, end: 0.1 }, lifespan: 12000, frequency: 520 },
+      wisps: { y: { min: 0, max: height }, speedY: { min: -20, max: -8 }, speedX: { min: -8, max: 8 }, tint: [0x9b6bff, 0x6ff0ff], scale: { start: 0.8 * S, end: 0 }, alpha: { start: 0.8, end: 0 }, lifespan: 6000, frequency: 420, blendMode: 'ADD' },
+      stars: { y: { min: 0, max: height }, speedY: 0, speedX: 0, tint: [0xffffff, 0x9fb0ff, 0xff9ce1], scale: { start: 0.5 * S, end: 0 }, alpha: { start: 1, end: 0 }, lifespan: 2500, frequency: 180, blendMode: 'ADD' },
+      glitch: { y: { min: 0, max: height }, speedX: { min: -120, max: 120 }, speedY: 0, tint: [0xff5ce1, 0x3cf2d0], scale: { start: 0.7 * S, end: 0.1 * S }, alpha: { start: 0.8, end: 0 }, lifespan: 900, frequency: 200, blendMode: 'ADD' },
+    }[b.particles];
+    if (!P) return;
+    this.biomeFx = this.add.particles(0, 0, 'p_ember', { x: { min: 0, max: width }, ...P }).setScrollFactor(0);
+    this.overLayer.add(this.biomeFx);
   }
 
   themeLight() {
@@ -817,6 +846,7 @@ export class DungeonScene extends Phaser.Scene {
         const n = ev.units.length;
         ev.units.forEach((u, i) => this.createHeroView(u, i, n));
         r.heroIds = ev.units.map((u) => u.id);
+        if (ev.anomaly && !instant) this.time.delayedCall(900, () => this.fx.banner(`${ev.anomaly.icon} Anomalie : ${ev.anomaly.name}`, '#ff9ce1'));
         break;
       }
       case 'move': {
@@ -894,6 +924,21 @@ export class DungeonScene extends Phaser.Scene {
       case 'miss': {
         const v = this.unitViews.get(ev.tgt);
         if (v && !instant) this.fx.floatText(v.x(), v.y() - v.size * 0.4, 'Esquive', '#c0d0ff', 0.7);
+        break;
+      }
+      case 'reaction': {
+        const v = this.unitViews.get(ev.tgt);
+        if (v && !instant) {
+          this.fx.floatText(v.x(), v.y() - v.size * 0.7, `${ev.icon} ${ev.name}`, ev.color || '#ffffff', 1);
+          this.fx.burst(v.x(), v.y(), Phaser.Display.Color.HexStringToColor(ev.color || '#ffffff').color, 12);
+        }
+        break;
+      }
+      case 'combo': {
+        if (!instant && ev.side === 'A' && this.raid) {
+          const c = this.raid.cell ? this.cellCenter(this.raid.cell.x, this.raid.cell.y) : null;
+          if (c) this.fx.floatText(c.x, c.y - this.T * 0.55, `🔥 ${ev.name} ×${ev.count}`, '#ffd84a', 0.9);
+        }
         break;
       }
       case 'status': {

@@ -3046,3 +3046,18 @@ body.sheet-open .zoom-ctl { display: none; }
   box-shadow: 0 0 30px var(--rc); animation: mut-pulse 1.2s ease-in-out infinite, pop-in 0.4s ease-out;
 }
 @keyframes mut-pulse { 50% { transform: scale(1.06) rotate(4deg); box-shadow: 0 0 50px var(--rc); } }
+
+/* ---------------------------------------------------------------- V2 : combos */
+.combo-counter {
+  position: absolute; right: 12px; top: calc(var(--safe-top) + 70px); display: flex; flex-direction: column; align-items: flex-end;
+  opacity: 0; transform: translateX(20px); transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+  text-shadow: 0 2px 6px #000, 0 0 12px rgba(255, 140, 40, 0.6);
+}
+.combo-counter.show { opacity: 1; transform: none; }
+.combo-counter b { font-family: var(--font-title); font-size: 44px; line-height: 1; color: #ffd84a; }
+.combo-counter span { font-size: 12px; font-weight: 900; color: #ffe9a8; }
+.combo-counter.pop b { animation: combo-pop 0.35s ease-out; }
+@keyframes combo-pop { 0% { transform: scale(1.8); color: #fff; } 100% { transform: scale(1); } }
+.biome-line { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.biome-change { min-height: 30px; padding: 2px 10px; border-radius: 10px; border: 1px solid var(--line-soft); background: rgba(255, 255, 255, 0.06); color: var(--gold); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.choice-card.locked { opacity: 0.55; }

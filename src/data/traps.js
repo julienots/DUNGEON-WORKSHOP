@@ -52,6 +52,27 @@ export const TRAPS = {
     damage: 18, cooldown: 7, range: 99, effect: { id: 'blind', chance: 0.6, duration: 3, power: 0.35 },
     cost: { gold: 1200, stone: 80, metal: 50, darkEssence: 5 }, maxLevel: 100, fx: 'shadow', unlock: { research: 'trap_shadow' },
   },
+  // ---- V2
+  roots: {
+    id: 'roots', name: 'Racines étrangleuses', icon: '🌿', element: 'nature', desc: 'Des racines jaillissent et entravent tout le groupe.',
+    damage: 12, cooldown: 6, range: 99, effect: { id: 'slow', chance: 0.8, duration: 4 },
+    cost: { gold: 500, stone: 60, metal: 20 }, maxLevel: 100, fx: 'roots', unlock: { research: 'trap_nature' },
+  },
+  blades: {
+    id: 'blades', name: 'Lames tournoyantes', icon: '⚙️', element: 'neutral', desc: 'Frappe très souvent et fait saigner.',
+    damage: 9, cooldown: 2.5, range: 2, effect: { id: 'bleed', chance: 0.5, duration: 4, power: 0.2 },
+    cost: { gold: 600, stone: 40, metal: 60 }, maxLevel: 100, fx: 'blades', unlock: { research: 'trap_blades' },
+  },
+  mine: {
+    id: 'mine', name: 'Mine explosive', icon: '💣', element: 'fire', desc: 'Énorme explosion, longue recharge.',
+    damage: 75, cooldown: 14, range: 99, effect: { id: 'stun', chance: 0.35, duration: 1 },
+    cost: { gold: 1800, stone: 120, metal: 120 }, maxLevel: 100, fx: 'mine', unlock: { research: 'trap_explosive' },
+  },
+  holy: {
+    id: 'holy', name: 'Sceau sacré', icon: '✨', element: 'light', desc: 'Marque les aventuriers : ils subissent plus de dégâts.',
+    damage: 22, cooldown: 6, range: 3, effect: { id: 'mark', chance: 0.7, duration: 4, power: 0.2 },
+    cost: { gold: 1600, stone: 80, metal: 60, crystals: 10 }, maxLevel: 100, fx: 'holy', unlock: { research: 'trap_holy' },
+  },
 };
 
 export const TRAP_LIST = Object.values(TRAPS);
@@ -103,5 +124,26 @@ export const TRAP_SYNERGIES = [
     id: 'toxic_bloom', name: 'Floraison toxique', icon: '🌿☠️', a: 'poison', b: 'nature',
     desc: 'Poison + nature : spores mortelles.',
     bonus: { damage: 0.3, effects: [{ id: 'poison', chance: 1, duration: 6, power: 0.35 }] },
+  },
+  // ---- V2
+  {
+    id: 'eclipse', name: 'Éclipse', icon: '✨🌑', a: 'light', b: 'shadow',
+    desc: 'Lumière + ombre : aveugle et marque.',
+    bonus: { damage: 0.4, effects: [{ id: 'blind', chance: 0.7, duration: 3, power: 0.4 }] },
+  },
+  {
+    id: 'chain_blast', name: 'Détonation en chaîne', icon: '💣⚡', a: 'fire', b: 'lightning', trapA: 'mine',
+    desc: 'Mine + foudre : explosion électrique.',
+    bonus: { damage: 0.5, effects: [{ id: 'shock', chance: 0.8, duration: 4, power: 0.25 }] },
+  },
+  {
+    id: 'frost_blades', name: 'Lames de givre', icon: '⚙️❄️', a: 'neutral', b: 'ice', trapA: 'blades',
+    desc: 'Lames + glace : coupures gelées.',
+    bonus: { damage: 0.3, effects: [{ id: 'slow', chance: 0.6, duration: 3 }] },
+  },
+  {
+    id: 'wildfire', name: 'Feu de forêt', icon: '🌿🔥', a: 'nature', b: 'fire',
+    desc: 'Racines + feu : les racines s’embrasent.',
+    bonus: { damage: 0.35, effects: [{ id: 'burn', chance: 0.8, duration: 4, power: 0.25 }] },
   },
 ];

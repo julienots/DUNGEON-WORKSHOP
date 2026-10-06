@@ -722,6 +722,53 @@ export function drawTrap(ctx, id, S = 64) {
         ellipse(ctx, x, c, 3, 2, '#d0a0ff');
       }
       break;
+    case 'roots':
+      ctx.lineCap = 'round';
+      for (const [x0, a] of [[c - 14, -0.6], [c, 0], [c + 14, 0.6]]) {
+        ctx.strokeStyle = '#5a3a1a';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(x0, c + 16);
+        ctx.quadraticCurveTo(x0 + a * 20, c, x0 + a * 8, c - 16);
+        ctx.stroke();
+        ctx.strokeStyle = '#8a6a3a';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ellipse(ctx, x0 + a * 8, c - 16, 5, 3, '#4fc36a', OL, 1.2);
+      }
+      break;
+    case 'blades':
+      ctx.save();
+      ctx.translate(c, c + 2);
+      for (let i = 0; i < 4; i++) {
+        ctx.rotate(Math.PI / 2);
+        fillPoly(ctx, [[0, -4], [20, -10], [22, -2], [0, 4]], linear(ctx, 0, -10, 0, 4, [[0, '#ffffff'], [1, '#7a8494']]), OL, 1.5);
+      }
+      circleVol(ctx, 0, 0, 6, '#5a5f6a', OL, 1.5);
+      ctx.restore();
+      break;
+    case 'mine':
+      circleVol(ctx, c, c + 4, 15, '#3a3a40', OL, 2.5);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        circleVol(ctx, c + Math.cos(a) * 15, c + 4 + Math.sin(a) * 15, 3, '#6a6a72', OL, 1);
+      }
+      ctx.shadowColor = '#ff4040';
+      ctx.shadowBlur = 12;
+      circleVol(ctx, c, c, 4, '#ff4040', null, 0);
+      break;
+    case 'holy':
+      ctx.shadowColor = '#fff3b0';
+      ctx.shadowBlur = 16;
+      ctx.strokeStyle = '#ffe08a';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(c, c + 2, 20, 0, Math.PI * 2);
+      ctx.stroke();
+      star(ctx, c, c + 2, 15, 8, 0.45);
+      ctx.fillStyle = rgba('#fff8d0', 0.85);
+      ctx.fill();
+      break;
     default:
       break;
   }
