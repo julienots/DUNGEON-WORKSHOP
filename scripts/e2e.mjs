@@ -13,6 +13,8 @@
  *  8. Mémoire : pas de fuite évidente après navigation intensive
  *  9. Migration : une vraie sauvegarde V1 est convertie en V2 sans perte (copie V1 conservée)
  * 10. Modes de jeu : écran Modes, lancement d'une run, combat regardé et combat rapide, fin de partie
+ * 11. Accueil V2 : tuiles du hub, bouton retour (Échap / Android), retour à l'accueil
+ * 12. Mode debug : invisible par défaut, disponible uniquement avec ?debug=1
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
@@ -330,6 +332,32 @@ try {
     await page.screenshot({ path: `${OUT}/10-mode-fin.png` });
     const modes = await page.evaluate(() => ({ runs: window.__DW.game.state.modes.records.survival?.runs, lb: window.__DW.game.state.modes.leaderboards.survival?.length }));
     record('Modes de jeu : run complète (Survie)', cards === 8 && afterWatch.run && modes.runs === 1 && modes.lb === 1 && errors.length === 0, `${JSON.stringify({ cards, afterWatch, modes })} ${errors.join(' | ').slice(0, 200)}`);
+    await context.close();
+  }
+
+  // ------------------------------------------------------------------ 11. Accueil + retour
+  {
+    const { context, page, errors } = await newMobile();
+    await page.goto(URL);
+    await page.waitForSelector('.hub-tile', { timeout: 30000 });
+    const tiles = await page.$$eval('.hub-tile', (els) => els.length);
+    const debugHidden = await page.evaluate(() => !document.querySelector('.debug-fab'));
+    await page.evaluate(() => [...document.querySelectorAll('.hub-tile')].find((t) => t.textContent.includes('Collection')).click());
+    await page.waitForFunction(() => window.__DW.ctx.router.current === 'Collection', null, { timeout: 20000 });
+    await page.evaluate(() => window.__DW.ctx.ui.modals.closeAll());
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.__DW.ctx.router.current === 'Dungeon', null, { timeout: 20000 });
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.__DW.ctx.router.current === 'MainMenu' && document.getElementById('btn-play'), null, { timeout: 20000 });
+    await page.screenshot({ path: `${OUT}/11-accueil.png` });
+    record('Accueil V2 : tuiles, retour et navigation', tiles >= 9 && debugHidden && errors.length === 0, `${tiles} tuiles ${errors.join(' | ').slice(0, 200)}`);
+
+    // ---------------------------------------------------------------- 12. Mode debug
+    await page.goto(URL + '?debug=1');
+    await page.waitForSelector('.debug-fab', { timeout: 30000 });
+    await page.evaluate(() => document.querySelector('.debug-fab').click());
+    await page.waitForSelector('.debug', { timeout: 10000 });
+    record('Mode debug uniquement avec ?debug=1', errors.length === 0, errors.join(' | ').slice(0, 200));
     await context.close();
   }
 } catch (err) {

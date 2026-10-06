@@ -93,7 +93,7 @@ export class BattleScene extends Phaser.Scene {
     clearTimeout(this.comboTimer);
     this.hud?.remove();
     if (this.rt) this.rt.locked = false;
-    if (this.data_?.mode === 'boss' || this.data_?.mode === 'run') ctx.audio?.playMusic('dungeon');
+    // La musique est rétablie par l'écran de retour (biome du donjon ou mode de jeu)
   }
 
   buildHud() {
@@ -267,7 +267,7 @@ export class BattleScene extends Phaser.Scene {
         if (!ev.dot) v.flash();
         if (ev.crit) {
           sfx('crit');
-          this.cameras.main.shake(140, 0.005);
+          this.fx.shake(140, 0.005);
         }
         break;
       }
@@ -338,7 +338,7 @@ export class BattleScene extends Phaser.Scene {
         const v = this.views.get(ev.tgt);
         sfx('phase');
         this.cameras.main.flash(300, 255, 80, 60);
-        this.cameras.main.shake(400, 0.008);
+        this.fx.shake(400, 0.008);
         this.fx.banner(`⚠️ ${ev.name}`, '#ff8a6a');
         this.phaseEl.textContent = `Phase ${ev.index + 1} — ${ev.msg}`;
         if (v) {
@@ -392,7 +392,7 @@ export class BattleScene extends Phaser.Scene {
     const glow = this.add.image(v.x(), v.y(), 'glow').setTint(col).setBlendMode(Phaser.BlendModes.ADD).setDepth(59).setDisplaySize(v.size * 2, v.size * 2).setAlpha(0.9);
     this.tweens.add({ targets: glow, alpha: 0, duration: 650, onComplete: () => glow.destroy() });
     this.fx.burst(v.x(), v.y(), col, 18);
-    this.cameras.main.shake(120, 0.004);
+    this.fx.shake(120, 0.004);
     const t = this.add.text(this.scale.width / 2, this.scale.height * 0.3, `${ev.icon} ${ev.name.toUpperCase()} !`, {
       fontFamily: FONT_TITLE, fontStyle: 'bold', fontSize: `${Math.round(24 * S)}px`, color: ev.color || '#ffffff', stroke: '#1b1216', strokeThickness: 7 * S, align: 'center',
     }).setOrigin(0.5).setDepth(120).setScale(0.4);

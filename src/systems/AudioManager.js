@@ -29,6 +29,22 @@ const TRACKS = {
     chords: [[0, 3, 7], [1, 5, 8], [0, 3, 7], [-2, 2, 5]],
     arp: [0, 2, 1, 2, 0, 3, 1, 2], arpOct: 2, bass: [0, 0, 12, 0, 0, 0, 13, 0], drums: 'hard', pad: false, bell: 0,
   },
+  // ---- V2 : biomes
+  biome_forest: { bpm: 80, root: 47, scale: [0, 2, 3, 5, 7, 9, 10], chords: [[0, 3, 7], [5, 9, 12], [3, 7, 10], [7, 10, 14]], arp: [0, 2, 1, 3, 2, 1, 0, 2], arpOct: 2, bass: [0, null, null, 7, null, null, 5, null], drums: 'soft', pad: true, bell: 0.3 },
+  biome_swamp: { bpm: 70, root: 44, scale: [0, 1, 3, 5, 6, 8, 10], chords: [[0, 3, 6], [1, 5, 8], [-2, 1, 5], [0, 3, 7]], arp: [0, 1, 0, 2, 1, 0, 2, 1], arpOct: 2, bass: [0, null, 0, null, 1, null, null, null], drums: 'soft', pad: true, bell: 0.1 },
+  biome_desert: { bpm: 92, root: 46, scale: [0, 1, 4, 5, 7, 8, 10], chords: [[0, 4, 7], [1, 5, 8], [0, 4, 7], [-2, 1, 5]], arp: [0, 1, 2, 1, 0, 2, 1, 3], arpOct: 2, bass: [0, null, 0, 0, null, 7, null, 0], drums: 'soft', pad: false, bell: 0.2 },
+  biome_glacier: { bpm: 64, root: 50, scale: [0, 2, 4, 6, 7, 9, 11], chords: [[0, 4, 7], [2, 6, 9], [-1, 2, 7], [4, 7, 11]], arp: [0, 2, 4, 2, 6, 4, 2, 0], arpOct: 3, bass: [0, null, null, null, 7, null, null, null], drums: null, pad: true, bell: 0.45 },
+  biome_volcano: { bpm: 112, root: 40, scale: [0, 1, 3, 5, 7, 8, 10], chords: [[0, 3, 7], [-2, 1, 5], [1, 5, 8], [0, 3, 7]], arp: [0, 1, 2, 0, 1, 2, 3, 2], arpOct: 2, bass: [0, 0, null, 0, 12, null, 0, null], drums: 'hard', pad: false, bell: 0.05 },
+  biome_necropolis: { bpm: 66, root: 43, scale: [0, 1, 3, 5, 6, 8, 10], chords: [[0, 3, 6], [-4, 0, 3], [1, 5, 8], [-2, 1, 6]], arp: [0, 2, 1, 0, 3, 1, 2, 0], arpOct: 2, bass: [0, null, null, null, -6, null, null, null], drums: 'soft', pad: true, bell: 0.2 },
+  biome_astral: { bpm: 76, root: 52, scale: [0, 2, 4, 6, 7, 9, 11], chords: [[0, 4, 7, 11], [2, 6, 9], [4, 7, 11], [-3, 0, 4]], arp: [0, 2, 3, 1, 2, 0, 3, 2], arpOct: 3, bass: [0, null, null, null, 0, null, null, null], drums: null, pad: true, bell: 0.55 },
+  biome_corrupted: { bpm: 100, root: 41, scale: [0, 1, 3, 4, 6, 7, 10], chords: [[0, 3, 6], [1, 4, 7], [-1, 3, 6], [0, 4, 6]], arp: [0, 3, 1, 2, 0, 2, 3, 1], arpOct: 2, bass: [0, null, 1, null, 0, 6, null, null], drums: 'hard', pad: true, bell: 0.15 },
+  // ---- V2 : modes
+  mode_survival: { bpm: 120, root: 42, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7], [-4, 0, 3], [-2, 2, 5], [-5, -2, 2]], arp: [0, 1, 2, 1, 0, 2, 1, 2], arpOct: 2, bass: [0, 0, 7, 0, 0, 7, 5, 0], drums: 'hard', pad: false, bell: 0 },
+  mode_challenge: { bpm: 108, root: 45, scale: [0, 2, 3, 5, 7, 8, 11], chords: [[0, 3, 7], [5, 8, 12], [7, 11, 14], [0, 3, 7]], arp: [0, 2, 1, 2, 0, 1, 2, 1], arpOct: 2, bass: [0, null, 0, 7, null, 0, 5, null], drums: 'hard', pad: true, bell: 0 },
+  mode_random: { bpm: 96, root: 48, scale: [0, 2, 3, 5, 7, 9, 10], chords: [[0, 3, 7], [3, 7, 10], [5, 9, 12], [-2, 2, 5]], arp: [0, 1, 3, 2, 1, 0, 2, 3], arpOct: 2, bass: [0, null, 3, null, 5, null, 7, null], drums: 'soft', pad: true, bell: 0.2 },
+  mode_roguelite: { bpm: 104, root: 46, scale: [0, 2, 3, 5, 7, 8, 10], chords: [[0, 3, 7], [8, 12, 15], [3, 7, 10], [10, 14, 17]], arp: [0, 1, 2, 3, 2, 1, 0, 1], arpOct: 2, bass: [0, 0, null, 0, 8, null, 3, null], drums: 'hard', pad: true, bell: 0.1 },
+  mode_cursed: { bpm: 88, root: 39, scale: [0, 1, 3, 4, 6, 8, 10], chords: [[0, 3, 6], [1, 4, 8], [0, 3, 6], [-1, 3, 6]], arp: [0, 1, 0, 2, 0, 1, 0, 3], arpOct: 2, bass: [0, null, 0, null, 0, 1, null, null], drums: 'hard', pad: true, bell: 0.1 },
+  mode_infinite: { bpm: 84, root: 49, scale: [0, 2, 3, 5, 7, 9, 10], chords: [[0, 3, 7, 10], [5, 9, 12], [3, 7, 10, 14], [7, 10, 14]], arp: [0, 2, 3, 2, 1, 3, 2, 0], arpOct: 3, bass: [0, null, null, 0, null, null, 7, null], drums: 'soft', pad: true, bell: 0.4 },
 };
 
 export class AudioManager {
@@ -77,6 +93,9 @@ export class AudioManager {
     this.sfxGain = this.ctx.createGain();
     this.musicGain.connect(comp);
     this.sfxGain.connect(comp);
+    // Fondu enchaîné entre les pistes (V2)
+    this.fadeGain = this.ctx.createGain();
+    this.fadeGain.connect(this.musicGain);
     // Réverbération simple pour la profondeur de la caverne
     this.reverb = this.ctx.createConvolver();
     this.reverb.buffer = this.makeImpulse(2.2, 2.5);
@@ -240,10 +259,32 @@ export class AudioManager {
     this.wantedTrack = name;
     if (!this.ctx) return;
     if (this.track === name && !force) return;
-    this.track = name;
-    this.step = 0;
-    this.nextNoteTime = this.ctx.currentTime + 0.15;
-    if (!this.timer) this.timer = setInterval(() => this.scheduler(), 30);
+    const start = () => {
+      this.track = name;
+      this.step = 0;
+      this.nextNoteTime = this.ctx.currentTime + 0.1;
+      if (!this.timer) this.timer = setInterval(() => this.scheduler(), 30);
+      if (this.fadeGain) {
+        const t = this.ctx.currentTime;
+        this.fadeGain.gain.cancelScheduledValues(t);
+        this.fadeGain.gain.setValueAtTime(this.fadeGain.gain.value, t);
+        this.fadeGain.gain.linearRampToValueAtTime(1, t + 0.8);
+      }
+    };
+    // Transition : la piste précédente s'éteint en fondu avant que la nouvelle commence
+    if (this.track && this.fadeGain && !force) {
+      clearTimeout(this.fadeTimer);
+      const t = this.ctx.currentTime;
+      this.fadeGain.gain.cancelScheduledValues(t);
+      this.fadeGain.gain.setValueAtTime(this.fadeGain.gain.value, t);
+      this.fadeGain.gain.linearRampToValueAtTime(0.0001, t + 0.5);
+      this.track = null;
+      this.fadeTimer = setTimeout(() => {
+        if (this.wantedTrack === name) start();
+      }, 520);
+      return;
+    }
+    start();
   }
 
   stopMusic() {
@@ -268,7 +309,7 @@ export class AudioManager {
     const bar = Math.floor(step / 16) % tr.chords.length;
     const chord = tr.chords[bar];
     const s16 = step % 16;
-    const dest = this.musicGain;
+    const dest = this.fadeGain || this.musicGain;
     const deg = (d) => {
       const n = tr.scale.length;
       const oct = Math.floor(d / n);

@@ -8,7 +8,7 @@ import { NAV_TABS } from './NavBar.js';
 export class Router {
   constructor(phaserGame) {
     this.pg = phaserGame;
-    this.current = 'Dungeon';
+    this.current = 'MainMenu';
     this.battleReturn = null;
   }
 
@@ -37,6 +37,24 @@ export class Router {
     this.current = key;
     ui.nav?.setActive(NAV_TABS.some((t) => t.id === key) ? key : null);
     ui.hud?.setVisible(key === 'Dungeon');
+  }
+
+  /** Retour à l'écran d'accueil (hub). */
+  goHome() {
+    const ui = ctx.ui;
+    ui.closeSheet();
+    ui.modals.closeAll();
+    if (this.current !== 'Dungeon' && this.current !== 'Battle' && this.current !== 'MainMenu') {
+      this.sm.stop(this.current);
+      ui.closeScreen(true);
+    }
+    if (this.sm.isActive('Dungeon') || this.sm.isSleeping('Dungeon') || this.sm.isPaused('Dungeon')) this.sm.stop('Dungeon');
+    ui.hud?.setVisible(false);
+    ui.hide();
+    document.body.classList.remove('route-dungeon', 'route-battle');
+    ctx.game.watching = false;
+    this.current = 'MainMenu';
+    this.sm.run('MainMenu');
   }
 
   /** Ouvre la scène de combat détaillée. data : { mode: 'raid'|'boss', ... } */

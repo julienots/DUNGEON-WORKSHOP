@@ -39,6 +39,11 @@ export class FxKit {
     };
   }
 
+  /** Secousse de caméra (désactivée en mode performance). */
+  shake(duration, intensity) {
+    if (!this.low()) this.scene.cameras.main.shake(duration, intensity);
+  }
+
   emit(name, x, y, n, tint) {
     const e = this.em[name];
     if (!e) return;
@@ -206,7 +211,7 @@ export class FxKit {
   buildPuff(c, T) {
     this.emit('smoke', c.x, c.y, 10, 0xc0b0a0);
     this.emit('shard', c.x, c.y, 8, 0x8a7a6a);
-    this.scene.cameras.main.shake(140, 0.004);
+    this.shake(140, 0.004);
   }
 
   impact(x, y, key, tint, size) {
@@ -277,7 +282,7 @@ export class FxKit {
             this.impact(t.x(), t.y(), key, tint, t.size * (fx === 'smash' ? 1.1 : 0.9));
             this.emit('spark', t.x(), t.y(), fx === 'smash' ? 10 : 6, tint);
           }
-          if (fx === 'smash') this.scene.cameras.main.shake(90, 0.003);
+          if (fx === 'smash') this.shake(90, 0.003);
           sfx(fx === 'slash' ? 'slash' : 'hit');
           if (ev.element && ev.element !== 'neutral') playSound();
         });
@@ -343,7 +348,7 @@ export class FxKit {
         if (fx === 'poisoncloud') for (const t of tgts) this.emit('smoke', t.x(), t.y(), 4, tint);
         this.ring(cx, cy, tint, size);
         for (const t of tgts) this.emit('spark', t.x(), t.y(), 5, tint);
-        if (fx === 'quake' || fx === 'explosion') this.scene.cameras.main.shake(160, 0.005);
+        if (fx === 'quake' || fx === 'explosion') this.shake(160, 0.005);
         sfx(fx === 'explosion' ? 'explosion' : ELEMENT_SFX[ev.element] || 'hit');
         break;
       }
@@ -418,7 +423,7 @@ export class FxKit {
         const s = this.getSprite('trap_boulder');
         s.setPosition(c.x - T * 0.6, c.y).setDepth(4800).setDisplaySize(T * 0.5, T * 0.5);
         this.scene.tweens.add({ targets: s, x: c.x + T * 0.6, angle: 360, duration: 420, onComplete: () => this.releaseSprite(s) });
-        this.scene.cameras.main.shake(220, 0.006);
+        this.shake(220, 0.006);
         this.emit('smoke', c.x, c.y + T * 0.2, 8, 0xa09080);
         sfx('explosion');
         break;
@@ -449,7 +454,7 @@ export class FxKit {
         this.ring(c.x, c.y, 0xff6a2b, T * 1.6, 500);
         this.emit('ember', c.x, c.y, 24, 0xff8a2b);
         this.emit('smoke', c.x, c.y, 10, 0x6a5a50);
-        this.scene.cameras.main.shake(260, 0.008);
+        this.shake(260, 0.008);
         sfx('explosion');
         break;
       case 'holy':

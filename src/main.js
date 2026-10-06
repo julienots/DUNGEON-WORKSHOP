@@ -29,6 +29,8 @@ import { AdventurerScene } from './scenes/AdventurerScene.js';
 import { PrestigeScene } from './scenes/PrestigeScene.js';
 import { ModesScene } from './scenes/ModesScene.js';
 import { RunScene } from './scenes/RunScene.js';
+import { installBackButton } from './ui/backButton.js';
+import { installDebugPanel } from './ui/DebugPanel.js';
 import { MasteryScene } from './scenes/MasteryScene.js';
 import { CollectionScene } from './scenes/CollectionScene.js';
 import { SeasonScene } from './scenes/SeasonScene.js';
@@ -71,6 +73,8 @@ const phaserGame = new Phaser.Game({
 phaserGame.registry.set('dpr', DPR);
 ctx.phaser = phaserGame;
 ctx.router = new Router(phaserGame);
+installBackButton();
+installDebugPanel();
 
 let resizeTimer = null;
 function onResize() {

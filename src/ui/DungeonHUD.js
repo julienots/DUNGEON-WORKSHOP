@@ -25,6 +25,7 @@ export class DungeonHUD {
     if (this.el) return;
     const g = ctx.game;
     this.side = {
+      home: IconButton('🏠', { title: 'Accueil', onClick: () => ctx.router.goHome() }),
       modes: IconButton('🎮', { title: 'Modes de jeu', onClick: () => ctx.router.go('Modes'), cls: 'modes-btn' }),
       mastery: IconButton('🧠', { title: 'Maîtrise', onClick: () => ctx.router.go('Mastery') }),
       missions: IconButton('📜', { title: 'Missions', onClick: () => ctx.router.go('Missions') }),
@@ -37,7 +38,7 @@ export class DungeonHUD {
     };
     for (const [k, b] of Object.entries(this.side)) b.dataset.hud = k;
     // Rangée d'accès rapide sous la barre du haut : laisse toute la largeur à la grille
-    this.row = h('div.hud-side.hud-row', this.side.modes, this.side.mastery, this.side.missions, this.side.shop, this.side.achievements, this.side.adventurers, this.side.bosses, this.side.event, this.side.prestige);
+    this.row = h('div.hud-side.hud-row', this.side.home, this.side.modes, this.side.missions, this.side.shop, this.side.adventurers, this.side.bosses, this.side.event, this.side.prestige);
 
     this.raidInfo = h('div.raid-info');
     this.speedBtn = h('button.hud-btn.speed-btn', { type: 'button', onclick: () => this.cycleSpeed() }, '');

@@ -109,7 +109,7 @@ export class DungeonScene extends Phaser.Scene {
     this.events.once('destroy', () => this.cleanup());
 
     this.ambientTimer = this.time.addEvent({ delay: 280, loop: true, callback: () => this.emitAmbient() });
-    ctx.audio?.playMusic('dungeon');
+    ctx.audio?.playMusic(this.g.biomes.get(this.fi).music);
     this.cameras.main.fadeIn(350, 0, 0, 0);
     // Reprendre un raid déjà en cours (retour d'un autre écran)
     this.syncRaid();
@@ -121,7 +121,7 @@ export class DungeonScene extends Phaser.Scene {
   }
 
   onWake() {
-    ctx.audio?.playMusic('dungeon');
+    ctx.audio?.playMusic(this.g.biomes.get(this.fi).music);
     if (this.fi !== this.g.viewFloor) this.changeFloor(this.g.viewFloor, true);
     else if (this.rebuildPending) this.rebuildNow();
     this.layoutDirty = true;
@@ -328,6 +328,7 @@ export class DungeonScene extends Phaser.Scene {
     if (fi === this.fi && !force) return;
     if (fi !== this.fi) this.setZoom(1);
     this.fi = fi;
+    ctx.audio?.playMusic(this.g.biomes.get(fi).music);
     this.endRaidVisuals(true);
     this.setMode('view');
     this.buildBackground();
@@ -913,7 +914,7 @@ export class DungeonScene extends Phaser.Scene {
         if (!ev.dot) v.flash(this);
         if (ev.crit) {
           sfx('crit');
-          this.cameras.main.shake(120, 0.004);
+          this.fx.shake(120, 0.004);
         }
         break;
       }
