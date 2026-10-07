@@ -364,7 +364,9 @@ export class DungeonSystem {
     const prev = this.floor(n - 2);
     const prevDef = this.def(n - 2);
     const reasons = [];
-    const needRaids = ECONOMY.floors.raidsToUnlockNext * (n - 1);
+    // Reconquête : un étage déjà atteint lors d'une partie précédente se redébloque plus vite
+    const reconquest = n <= (this.game.state.prestige.bestFloor || 1);
+    const needRaids = Math.ceil(ECONOMY.floors.raidsToUnlockNext * (n - 1) * (reconquest ? ECONOMY.floors.reconquestRaidShare : 1));
     if (prev.raidsDefended < needRaids) reasons.push(`Repousser ${needRaids} raids à l’étage ${n - 1} (${prev.raidsDefended}/${needRaids})`);
     let boss = null;
     if (prevDef.boss) {
@@ -374,7 +376,7 @@ export class DungeonSystem {
     }
     const cost = this.floorUnlockCost(n);
     const affordable = this.game.economy.canAfford(cost);
-    return { number: n, cost, reasons, affordable, boss, ok: reasons.length === 0 && affordable };
+    return { number: n, cost, reasons, affordable, boss, reconquest, ok: reasons.length === 0 && affordable };
   }
 
   unlockNextFloor() {

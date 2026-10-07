@@ -115,6 +115,8 @@ export const ECONOMY = {
     expandGrowth: 1.7,
     /** Nombre minimum de raids repoussés sur l'étage précédent pour débloquer le suivant. */
     raidsToUnlockNext: 8,
+    /** Étages déjà conquis lors d'une partie précédente (≤ meilleur étage) : part des raids exigés. */
+    reconquestRaidShare: 0.25,
   },
 
   monsters: {

@@ -23,6 +23,7 @@ export function showFloors() {
     const nd = floorDef(next.number);
     wrap.appendChild(h('div.next-floor',
       h('div.next-floor-title', `⬇️ Étage ${next.number} — ${nd.tierName}`),
+      next.reconquest ? h('div.small.good', '♻️ Reconquête : étage déjà atteint, 4× moins de raids exigés') : null,
       next.reasons.length ? h('ul.req-list', next.reasons.map((r) => h('li', r))) : h('div.small.good', '✓ Conditions remplies'),
       h('div.row.gap.wrap',
         Button('Creuser l’étage', {

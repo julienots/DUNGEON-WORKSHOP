@@ -84,3 +84,17 @@ test('étage 6 bloqué par le gardien de l’étage 5', () => {
   assert.equal(info.ok, false);
   assert.ok(info.reasons.some((r) => r.includes('gardien')));
 });
+
+test('reconquête : un étage déjà atteint lors d’une partie précédente exige 4× moins de raids', () => {
+  const g = newGame();
+  rich(g);
+  const normal = g.dungeon.nextFloorInfo();
+  assert.equal(normal.reconquest, false);
+  assert.ok(normal.reasons[0].includes('8 raids'), normal.reasons[0]);
+  g.state.prestige.bestFloor = 20;
+  const re = g.dungeon.nextFloorInfo();
+  assert.equal(re.reconquest, true);
+  assert.ok(re.reasons[0].includes('2 raids'), re.reasons[0]);
+  g.state.floors[0].raidsDefended = 2;
+  assert.ok(g.dungeon.unlockNextFloor().ok);
+});
