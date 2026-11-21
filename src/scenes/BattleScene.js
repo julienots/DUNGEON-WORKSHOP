@@ -10,6 +10,11 @@ import { FONT_TITLE, FONT_BODY, SPEEDS } from '../utils/constants.js';
 import { formatShort } from '../utils/format.js';
 import { SpriteFactory } from '../gfx/SpriteFactory.js';
 import { showRunEnd } from '../ui/screens/RunScreen.js';
+import { ISO } from '../gfx/isoArt.js';
+import { ROOM_PROPS, PROP_W, PROP_H, PROP_FOOT } from '../gfx/isoProps.js';
+import { THEMES } from '../data/floors.js';
+
+const ARENA_N = 5; // l'arène est un losange de 5 × 5 dalles
 
 /**
  * BATTLE SCENE
@@ -69,24 +74,120 @@ export class BattleScene extends Phaser.Scene {
     // Décor
     const theme = data.theme || this.g.dungeon.def(data.floor ?? this.g.viewFloor).theme;
     this.cameras.main.setBackgroundColor('#0a0708');
-    const bg = this.add.tileSprite(0, 0, width, height, `bg_${theme}`).setOrigin(0);
-    bg.tileScaleX = bg.tileScaleY = 2.5 * this.S;
-    const floorKey = this.room ? `floor_${this.room.room}` : 'floor_lair';
-    const floorY = height * 0.58;
-    const floor = this.add.tileSprite(width / 2, floorY, width, height * 0.5, floorKey).setAlpha(0.55);
-    floor.tileScaleX = floor.tileScaleY = 1.2 * this.S;
-    this.add.image(width / 2, floorY - height * 0.25, 'shadow').setDisplaySize(width * 1.4, height * 0.12).setAlpha(0.8);
-    this.add.image(width / 2, height / 2, 'vignette').setDisplaySize(width * 1.2, height * 1.2);
-    this.add.image(width * 0.5, floorY, 'glow').setDisplaySize(width * 1.2, height * 0.6).setTint(0xffa040).setAlpha(0.12).setBlendMode(Phaser.BlendModes.ADD);
+    this.theme = theme;
     this.unitLayer = this.add.layer().setDepth(10);
     this.fxLayer = this.add.layer().setDepth(20);
     this.fx = new FxKit(this, this.fxLayer, this.S);
-    this.arena = { left: width * 0.26, right: width * 0.74, top: height * 0.24, bottom: height * 0.78 };
+    this.buildArena(theme, this.room?.room || (data.mode === 'raid' ? 'basic' : 'arena'));
 
     this.buildHud();
     this.cameras.main.fadeIn(250, 0, 0, 0);
     sfx(data.mode === 'boss' || (data.mode === 'run' && data.run.stage.isBoss) ? 'boss_roar' : 'raid_start');
     this.events.once('shutdown', () => this.cleanup());
+  }
+
+  /** Arène isométrique : dalles de la salle, murs arrière du thème, torches, accessoires, socle. */
+  buildArena(themeId, roomId) {
+    const { width, height } = this.scale;
+    const S = this.S;
+    const N = ARENA_N;
+    const lowQ = this.g.state.settings.quality === 'low';
+    const topSafe = 90 * S;
+    const botSafe = 110 * S;
+    const availH = height - topSafe - botSafe;
+    const TW = Math.min(width / (N - 0.75), (availH - 40 * S) / (N / 2 + ISO.WALL / ISO.W + 0.2));
+    const TH = TW / 2;
+    const wallH = (TW * ISO.WALL) / ISO.W;
+    const sc = TW / ISO.W;
+    const ox = width / 2;
+    const oy = topSafe + wallH * 1.6 + Math.max(0, (availH - (wallH * 1.6 + N * TH)) / 2);
+    this.isoA = { TW, TH, ox, oy };
+    const iso = (gx, gy) => ({ x: ox + ((gx - gy) * TW) / 2, y: oy + ((gx + gy) * TH) / 2 });
+    this.isoPt = iso;
+    // fond : vide + brume
+    this.add.image(width / 2, height / 2, `void_${themeId}`).setDisplaySize(width * 1.1, height * 1.1).setDepth(-20);
+    const fogTint = Phaser.Display.Color.HexStringToColor(THEMES[themeId]?.fog || '#3a2a1a').color;
+    if (!lowQ) {
+      for (let i = 0; i < 3; i++) {
+        const fog = this.add.image(width * (0.2 + i * 0.3), height * (0.3 + i * 0.2), 'fog_cloud').setDisplaySize(width * 1.4, height * 0.3).setTint(fogTint).setAlpha(0.5).setBlendMode(Phaser.BlendModes.ADD).setDepth(-19);
+        this.tweens.add({ targets: fog, x: fog.x + (i % 2 ? 1 : -1) * width * 0.25, duration: 14000 + i * 3000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      }
+    }
+    const floorKey = this.textures.exists(`iso_floor_${roomId}`) ? `iso_floor_${roomId}` : 'iso_floor_basic';
+    const groundKey = this.textures.exists(`iso_ground_${roomId}`) ? `iso_ground_${roomId}` : floorKey;
+    // dalles
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const c = iso(x + 0.5, y + 0.5);
+        const edge = Math.max(Math.abs(x - (N - 1) / 2), Math.abs(y - (N - 1) / 2)) / ((N - 1) / 2);
+        const center = x === (N - 1) / 2 && y === (N - 1) / 2;
+        this.add.image(c.x, c.y, center ? floorKey : groundKey).setDisplaySize(TW + 2, TH + 1).setDepth(-10).setTint(Phaser.Display.Color.GetColor(255 - edge * 70, 255 - edge * 70, 255 - edge * 70));
+        if (x === 0) this.add.image(c.x, c.y, 'iso_ao_l').setDisplaySize(TW + 2, TH + 1).setDepth(-9.5);
+        if (y === 0) this.add.image(c.x, c.y, 'iso_ao_r').setDisplaySize(TW + 2, TH + 1).setDepth(-9.5);
+      }
+    }
+    // lumière centrale
+    const mid = iso(N / 2, N / 2);
+    const light = THEMES[themeId]?.light || 0xffb060;
+    const pool = this.add.image(mid.x, mid.y, 'glow').setDisplaySize(TW * N * 0.9, TH * N * 0.9).setTint(light).setAlpha(0.22).setBlendMode(Phaser.BlendModes.ADD).setDepth(-9);
+    this.tweens.add({ targets: pool, alpha: 0.12, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    // murs arrière (rangée y = -1 et colonne x = -1)
+    const blocks = [];
+    for (let i = -1; i < N; i++) blocks.push([i, -1], [-1, i]);
+    blocks.push([-1, -1]);
+    const seen = new Set();
+    for (const [x, y] of blocks) {
+      const k = `${x},${y}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const c = iso(x + 0.5, y + 0.5);
+      const v = Math.abs((x * 7 + y * 13) % 4);
+      const key = SpriteFactory.isoBlock(themeId, v, 'tall');
+      const texH = ISO.TOP + ISO.H + ISO.WALL;
+      // deux assises de mur : la salle paraît plus haute
+      const upper = SpriteFactory.isoBlock(themeId, (v + 1) % 4, 'tall');
+      this.add.image(c.x, c.y - wallH, upper).setOrigin(0.5, (ISO.TOP + ISO.H / 2 + ISO.WALL) / texH).setDisplaySize(TW + 1, texH * sc + 0.5).setDepth(-7.995 + (x + y) * 0.01).setTint(0xb8aca0);
+      this.add.image(c.x, c.y, key).setOrigin(0.5, (ISO.TOP + ISO.H / 2 + ISO.WALL) / texH).setDisplaySize(TW + 1, texH * sc + 0.5).setDepth(-8 + (x + y) * 0.01);
+      if (!lowQ && x >= 0 && x % 2 === 0) this.arenaTorch(c.x - TW / 4, c.y + TH / 4 - wallH * 0.55, 'l', light, sc, TW);
+      if (!lowQ && y >= 0 && y % 2 === 1) this.arenaTorch(c.x + TW / 4, c.y + TH / 4 - wallH * 0.55, 'r', light, sc, TW);
+    }
+    // socle avant
+    for (let i = 0; i < N; i++) {
+      const cl = iso(i + 0.5, N - 0.5);
+      this.add.image(cl.x - TW / 2, cl.y, SpriteFactory.isoBase(themeId, 'l', i % 2)).setOrigin(0, 0).setDisplaySize(TW / 2 + 0.5, (ISO.H / 2 + ISO.BASE) * sc).setDepth(-11);
+      const cr = iso(N - 0.5, i + 0.5);
+      this.add.image(cr.x, cr.y + TH / 2, SpriteFactory.isoBase(themeId, 'r', i % 2)).setOrigin(0, (ISO.H / 2) / (ISO.H / 2 + ISO.BASE)).setDisplaySize(TW / 2 + 0.5, (ISO.H / 2 + ISO.BASE) * sc).setDepth(-11);
+    }
+    // accessoires de la salle, repoussés vers le fond de l'arène
+    for (const [id, lx, ly] of ROOM_PROPS[roomId] || []) {
+      const p = iso(lx * 1.6, ly * 1.6);
+      const w = TW * 0.42;
+      const img = this.add.image(p.x, p.y, `prop_${id}`).setOrigin(0.5, PROP_FOOT / PROP_H).setDisplaySize(w, (w * PROP_H) / PROP_W).setDepth(p.y);
+      this.unitLayer.add(img);
+    }
+    if (!lowQ) {
+      // rais de lumière tombant d'une ouverture invisible + poussière en suspension
+      for (let i = 0; i < 3; i++) {
+        const r = this.add.image(width * (0.3 + i * 0.22), 0, 'godray').setOrigin(0.5, 0).setDisplaySize(width * 0.2, oy + TH * N * 0.6).setAngle(-14 + i * 5).setTint(light).setAlpha(0.06).setBlendMode(Phaser.BlendModes.ADD).setDepth(4);
+        this.tweens.add({ targets: r, alpha: 0.015, duration: 2600 + i * 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      }
+      this.add.particles(0, 0, 'p_ember', {
+        x: { min: 0, max: width }, y: { min: topSafe, max: oy + TH * N }, lifespan: 5000, speedY: { min: 4 * S, max: 14 * S }, speedX: { min: -6 * S, max: 6 * S },
+        scale: { start: 0.5 * S, end: 0.1 * S }, alpha: { start: 0, end: 0.6, ease: 'Sine.easeInOut' }, tint: [0xffe0b0, 0xffffff], frequency: 160, blendMode: 'ADD',
+      }).setDepth(4.5);
+    }
+    this.add.image(width / 2, height / 2, 'vignette').setDisplaySize(width * 1.2, height * 1.2).setDepth(5);
+    // lignes de placement : héros en haut à gauche, défenseurs en bas à droite
+    this.lines = { B: { gx: 1.15, from: 0.55, to: N - 0.45 }, A: { gx: N - 1.25, from: 0.55, to: N - 0.45 } };
+  }
+
+  arenaTorch(x, y, side, color, sc, TW) {
+    this.add.image(x, y, `torch_${side}`).setDisplaySize(48 * sc * 1.4, 64 * sc * 1.4).setDepth(-7);
+    const fy = y - 64 * sc * 1.4 * 0.18;
+    const glow = this.add.image(x, fy, 'glow').setDisplaySize(TW * 0.9, TW * 0.75).setTint(color).setAlpha(0.42).setBlendMode(Phaser.BlendModes.ADD).setDepth(-6.9);
+    const fl = this.add.image(x, fy, 'flame').setOrigin(0.5, 0.92).setDisplaySize(12 * sc * 2.2, 18 * sc * 2.2).setTint(0xffc060).setBlendMode(Phaser.BlendModes.ADD).setDepth(-6.8);
+    this.tweens.add({ targets: fl, scaleY: fl.scaleY * 1.25, scaleX: fl.scaleX * 0.85, duration: 100 + Math.random() * 80, yoyo: true, repeat: -1 });
+    this.tweens.add({ targets: glow, alpha: 0.25, duration: 160 + Math.random() * 160, yoyo: true, repeat: -1 });
   }
 
   cleanup() {
@@ -124,14 +225,17 @@ export class BattleScene extends Phaser.Scene {
   layoutSide(side) {
     const list = [...this.views.values()].filter((v) => v.side === side);
     const n = list.length;
-    const { left, right, top, bottom } = this.arena;
-    const x = side === 'B' ? left : right;
-    const span = bottom - top;
-    const size = Math.min(this.scale.width * 0.3, (span / Math.max(1, n)) * (n >= 4 ? 1.5 : 1.25), 260 * this.S);
+    const L = this.lines[side];
+    const { TW } = this.isoA;
+    const span = L.to - L.from;
+    const size = Math.min(TW * 1.25, ((span * TW) / Math.max(1, n)) * (n >= 4 ? 1.6 : 1.3), 240 * this.S);
     list.forEach((v, i) => {
-      const y = n === 1 ? (top + bottom) / 2 : top + (span * (i + 0.5)) / n;
-      const ox = n >= 3 ? (i % 2 ? 1 : -1) * size * 0.32 : 0;
-      v.place(x + ox, y, v.isBoss ? Math.min(size * 1.6, this.scale.width * 0.48) : size);
+      const gy = n === 1 ? (L.from + L.to) / 2 : L.from + (span * (i + 0.5)) / n;
+      // quinconce : un rang sur deux légèrement en avant
+      const gx = L.gx + (n >= 3 ? (i % 2 ? 0.35 : -0.35) * (side === 'B' ? -1 : 1) : 0);
+      const feet = this.isoPt(gx, gy);
+      const sz = v.isBoss ? Math.min(size * 1.7, this.scale.width * 0.5) : size;
+      v.place(feet.x, feet.y - sz * 0.42, sz);
     });
   }
 
@@ -159,8 +263,11 @@ export class BattleScene extends Phaser.Scene {
         v.size = size;
         v.baseX = x;
         v.baseY = y;
-        spr.setPosition(x, y).setDisplaySize(size, size);
-        shadow.setPosition(x, y + size * 0.42).setDisplaySize(size * 0.75, size * 0.2);
+        spr.setPosition(x, y).setDisplaySize(size, size).setDepth(y + size * 0.42);
+        shadow.setPosition(x, y + size * 0.42).setDisplaySize(size * 0.75, size * 0.22).setDepth(y + size * 0.42 - 0.02);
+        aura?.setDepth(y + size * 0.42 - 0.01);
+        name.setDepth(1e6);
+        status.setDepth(1e6);
         aura?.setPosition(x, y).setDisplaySize(size * 1.5, size * 1.5);
         const barW = Math.min(size * 0.8, 160 * S);
         hp.destroy();

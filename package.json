@@ -1,6 +1,6 @@
 {
   "name": "dungeon-workshop",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "private": true,
   "description": "DUNGEON WORKSHOP - jeu mobile de gestion / idle / construction de donjon (Phaser 3, offline-first)",
   "type": "module",

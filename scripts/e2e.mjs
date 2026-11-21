@@ -45,7 +45,7 @@ async function startServer() {
   throw new Error('Le serveur de prévisualisation ne démarre pas');
 }
 
-const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+const browser = await chromium.launch({ executablePath: process.env.PW_CHROME || undefined, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 
 async function newMobile(viewport = { width: 390, height: 844 }, existing = null) {
   const context = existing || (await browser.newContext({ viewport, deviceScaleFactor: 2, isMobile: true, hasTouch: true }));

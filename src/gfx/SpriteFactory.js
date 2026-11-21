@@ -12,6 +12,8 @@ import { SKINS, DECORATIONS } from '../data/cosmetics.js';
 import { CHESTS } from '../data/chests.js';
 import { drawDecoration, drawChest } from './collectionArt.js';
 import { hexToRgb, rgbToHex } from './draw.js';
+import { ISO, drawIsoBlock, drawIsoFloor, drawIsoAO, drawIsoBase, drawIsoTile, drawIsoOutline, drawIsoTrap, drawTorchBracket, drawFlame } from './isoArt.js';
+import { PROP_W, PROP_H, PROP_IDS, drawProp } from './isoProps.js';
 
 /** Mélange deux couleurs hexadécimales (t = part de b). */
 function mixHex(a, b, t) {
@@ -67,12 +69,34 @@ class SpriteFactoryImpl {
           this.make(`rockfront_${themeId}_${i}`, TILE_TEX, 40, (ctx) => drawRockFront(ctx, theme, 55 + i * 331));
         }
         this.make(`bg_${themeId}`, 256, 256, (ctx) => this.drawBackground(ctx, theme, 256));
+        this.make(`void_${themeId}`, 256, 256, (ctx) => {
+          ctx.fillStyle = radial(ctx, 128, 110, 190, [[0, shade(theme.fog, 0.05)], [0.45, shade(theme.bg, 0.12)], [1, shade(theme.bg, -0.4)]]);
+          ctx.fillRect(0, 0, 256, 256);
+        });
       });
     }
     jobs.push(() => {
       for (const [id, room] of Object.entries(ROOMS)) this.make(`floor_${id}`, TILE_TEX, TILE_TEX, (ctx) => drawRoomFloor(ctx, id, room, id.length * 7919));
       this.make('tile_shade', TILE_TEX, TILE_TEX, (ctx) => drawInnerShade(ctx));
       for (const id of Object.keys(TRAPS)) this.make(`trap_${id}`, 64, 64, (ctx) => drawTrap(ctx, id));
+    });
+    // Vue isométrique 2.5D : sols, accessoires, décalques, lumières
+    jobs.push(() => {
+      for (const [id, room] of Object.entries(ROOMS)) this.make(`iso_floor_${id}`, ISO.W, ISO.H, (ctx) => drawIsoFloor(ctx, id, room, id.length * 7919));
+    });
+    jobs.push(() => {
+      for (const [id, room] of Object.entries(ROOMS)) this.make(`iso_ground_${id}`, ISO.W, ISO.H, (ctx) => drawIsoFloor(ctx, id, room, id.length * 131 + 7, true));
+    });
+    jobs.push(() => {
+      for (const id of PROP_IDS) this.make(`prop_${id}`, PROP_W, PROP_H, (ctx) => drawProp(ctx, id));
+      for (const id of Object.keys(TRAPS)) this.make(`iso_trap_${id}`, 160, 80, (ctx) => drawIsoTrap(ctx, id));
+      this.make('iso_ao_l', ISO.W, ISO.H, (ctx) => drawIsoAO(ctx, 'l'));
+      this.make('iso_ao_r', ISO.W, ISO.H, (ctx) => drawIsoAO(ctx, 'r'));
+      this.make('iso_tile', 160, 80, (ctx) => drawIsoTile(ctx));
+      this.make('iso_outline', 168, 88, (ctx) => drawIsoOutline(ctx));
+      this.make('torch_l', 48, 64, (ctx) => drawTorchBracket(ctx, 'l'));
+      this.make('torch_r', 48, 64, (ctx) => drawTorchBracket(ctx, 'r'));
+      this.make('flame', 32, 48, (ctx) => drawFlame(ctx));
     });
     // Monstres (par paquets)
     const chunk = 8;
@@ -101,6 +125,23 @@ class SpriteFactoryImpl {
       }
     });
     return jobs;
+  }
+
+  /** Bloc de roche isométrique (généré à la demande, par thème). kind : 'tall' | 'low'. */
+  isoBlock(themeId, v, kind) {
+    const key = `iso_${kind}_${themeId}_${v}`;
+    if (!this.canvases.has(key)) {
+      const h = kind === 'low' ? ISO.LOW : ISO.WALL;
+      this.make(key, ISO.W, ISO.TOP + ISO.H + h, (ctx) => drawIsoBlock(ctx, themeId, THEMES[themeId] || THEMES.cave, 4099 + v * 977 + themeId.length * 131 + (kind === 'low' ? 17 : 0), h, kind === 'low'));
+    }
+    return key;
+  }
+
+  /** Socle du diorama (face gauche « l » ou droite « r »). */
+  isoBase(themeId, side, v) {
+    const key = `iso_base_${side}_${themeId}_${v}`;
+    if (!this.canvases.has(key)) this.make(key, ISO.W / 2, ISO.H / 2 + ISO.BASE, (ctx) => drawIsoBase(ctx, themeId, THEMES[themeId] || THEMES.cave, side, 271 + v * 613 + (side === 'r' ? 5 : 0)));
+    return key;
   }
 
   monsterTexture(m) {
@@ -153,6 +194,25 @@ class SpriteFactoryImpl {
         ctx.fillRect(0, 0, size, size);
       });
     soft('p_soft', 64);
+    this.make('fog_cloud', 256, 128, (ctx) => {
+      const rnd = seeded(4242);
+      for (let i = 0; i < 14; i++) {
+        const x = 50 + rnd() * 156;
+        const y = 40 + rnd() * 48;
+        const r = 30 + rnd() * 40;
+        ctx.fillStyle = radial(ctx, x, y, r, [[0, 'rgba(255,255,255,0.22)'], [1, 'rgba(255,255,255,0)']]);
+        ctx.fillRect(0, 0, 256, 128);
+      }
+    });
+    this.make('godray', 64, 256, (ctx) => {
+      ctx.fillStyle = linear(ctx, 0, 0, 64, 0, [[0, 'rgba(255,255,255,0)'], [0.5, 'rgba(255,255,255,0.5)'], [1, 'rgba(255,255,255,0)']]);
+      ctx.fillRect(0, 0, 64, 256);
+      const g = ctx.globalCompositeOperation;
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.fillStyle = linear(ctx, 0, 0, 0, 256, [[0, 'rgba(0,0,0,1)'], [1, 'rgba(0,0,0,0)']]);
+      ctx.fillRect(0, 0, 64, 256);
+      ctx.globalCompositeOperation = g;
+    });
     soft('glow', 128);
     this.make('p_spark', 32, 32, (ctx) => {
       ctx.fillStyle = '#ffffff';

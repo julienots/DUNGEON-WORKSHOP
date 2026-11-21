@@ -35,6 +35,7 @@ export class FxKit {
       shard: mk('p_shard', { lifespan: 500, speed: { min: 120 * S, max: 300 * S }, scale: { start: 0.9 * S, end: 0.2 * S }, alpha: { start: 1, end: 0 }, rotate: { min: 0, max: 360 }, gravityY: 400 * S }),
       plus: mk('p_plus', { lifespan: 900, speedY: { min: -70 * S, max: -30 * S }, speedX: { min: -20 * S, max: 20 * S }, scale: { start: 0.55 * S, end: 0.1 * S }, alpha: { start: 1, end: 0 }, blendMode: 'ADD' }),
       coin: mk('p_coin', { lifespan: 900, speed: { min: 90 * S, max: 220 * S }, angle: { min: 200, max: 340 }, gravityY: 500 * S, scale: { start: 0.9 * S, end: 0.6 * S }, alpha: { start: 1, end: 0 }, rotate: { min: 0, max: 360 } }),
+      dust: mk('p_smoke', { lifespan: 650, speedX: { min: -18 * S, max: 18 * S }, speedY: { min: -14 * S, max: -4 * S }, scale: { start: 0.12 * S, end: 0.45 * S }, alpha: { start: 0.45, end: 0 } }),
       soft: mk('p_soft', { lifespan: 600, speed: { min: 10 * S, max: 60 * S }, scale: { start: 0.5 * S, end: 0 }, alpha: { start: 0.9, end: 0 }, blendMode: 'ADD' }),
     };
   }
@@ -193,6 +194,12 @@ export class FxKit {
     s.setDisplaySize(26 * this.S, len);
     s.setAngle(Phaser.Math.RadToDeg(Math.atan2(y2 - y1, x2 - x1)) - 90);
     this.scene.tweens.add({ targets: s, alpha: 0, duration: 220, onComplete: () => this.releaseSprite(s) });
+  }
+
+  /** Petit nuage de poussière soulevé par un pas. */
+  dust(x, y, tint = 0xb0a090) {
+    if (this.low()) return;
+    this.emit('dust', x, y, 2, tint);
   }
 
   heal(x, y) {

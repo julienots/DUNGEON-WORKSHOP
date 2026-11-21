@@ -5,6 +5,9 @@ import { FONT_TITLE } from '../utils/constants.js';
 import { openSettingsModal } from '../ui/screens/SettingsScreen.js';
 import { icon } from '../ui/icons.js';
 import { formatShort } from '../utils/format.js';
+import { SpriteFactory } from '../gfx/SpriteFactory.js';
+import { ISO } from '../gfx/isoArt.js';
+import { PROP_W, PROP_H, PROP_FOOT } from '../gfx/isoProps.js';
 
 /** Menu principal : titre animé, parade de monstres, accès au donjon. */
 export class MainMenuScene extends Phaser.Scene {
@@ -17,34 +20,76 @@ export class MainMenuScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const S = this.registry.get('dpr') || 1;
     this.cameras.main.setBackgroundColor('#0a0708');
-    const bg = this.add.tileSprite(0, 0, width, height, 'bg_cave').setOrigin(0);
-    bg.tileScaleX = bg.tileScaleY = 2.4 * S;
-    this.bg = bg;
-    const bg2 = this.add.tileSprite(0, 0, width, height, 'bg_citadel').setOrigin(0).setAlpha(0.25).setBlendMode(Phaser.BlendModes.ADD);
-    bg2.tileScaleX = bg2.tileScaleY = 4 * S;
-    this.bg2 = bg2;
-
-    // Sol rocheux en bas
-    const T = Math.round(width / 6);
-    for (let i = 0; i < 8; i++) {
-      this.add.image(i * T, height * 0.34, `rock_cave_${i % 4}`).setOrigin(0, 0).setDisplaySize(T + 1, T + 1).setTint(0x8a7a70);
-      this.add.image(i * T, height * 0.34 - T * 0.2, `rockfront_cave_${i % 4}`).setOrigin(0, 0).setDisplaySize(T + 1, T * 0.2);
+    // Vide + brume
+    this.add.image(width / 2, height / 2, 'void_cave').setDisplaySize(width * 1.1, height * 1.1);
+    this.fogs = [];
+    for (let i = 0; i < 3; i++) {
+      const fog = this.add.image(Math.random() * width, height * (0.12 + i * 0.12), 'fog_cloud').setDisplaySize(width * 1.4, height * 0.22).setTint(0x6a4a2a).setAlpha(0.5).setBlendMode(Phaser.BlendModes.ADD);
+      fog.speed = (10 + i * 6) * (i % 2 ? 1 : -1) * S;
+      this.fogs.push(fog);
     }
-    this.add.image(width / 2, height * 0.5, 'glow').setDisplaySize(width * 1.6, height).setTint(0xff7a2b).setAlpha(0.18).setBlendMode(Phaser.BlendModes.ADD);
 
-    // Parade de monstres
+    // Diorama 2.5D : un couloir de donjon en diagonale, murs et torches, parade de monstres
+    const TW = Math.round(width / 3.3);
+    const TH = TW / 2;
+    const sc = TW / ISO.W;
+    const wallH = TW * (ISO.WALL / ISO.W);
+    const ox = width / 2 - TW;
+    const oy = height * 0.31 - TW;
+    const iso = (gx, gy) => ({ x: ox + ((gx - gy) * TW) / 2, y: oy + ((gx + gy) * TH) / 2 });
+    this.menuIso = iso;
+    const world = this.add.layer();
+    this.world = world;
+    const floors = ['basic', 'crypt', 'lava', 'treasure', 'frozen', 'grove', 'combat', 'dimensional'];
+    const texH = ISO.TOP + ISO.H + ISO.WALL;
+    const texL = ISO.TOP + ISO.H + ISO.LOW;
+    for (let gx = -5; gx <= 10; gx++) {
+      const v = ((gx % 4) + 4) % 4;
+      // murs du fond
+      const cw = iso(gx + 0.5, -0.5);
+      world.add(this.add.image(cw.x, cw.y, SpriteFactory.isoBlock('cave', v, 'tall')).setOrigin(0.5, (ISO.TOP + ISO.H / 2 + ISO.WALL) / texH).setDisplaySize(TW + 1, texH * sc + 0.5).setDepth(cw.y));
+      if (gx % 2 === 0) {
+        const tx = cw.x - TW / 4;
+        const ty = cw.y + TH / 4 - wallH * 0.55;
+        world.add(this.add.image(tx, ty, 'torch_l').setDisplaySize(48 * sc * 1.4, 64 * sc * 1.4).setDepth(cw.y + 0.1));
+        const fy = ty - 64 * sc * 1.4 * 0.18;
+        const glow = this.add.image(tx, fy, 'glow').setDisplaySize(TW * 1.1, TW * 0.9).setTint(0xffa040).setAlpha(0.45).setBlendMode(Phaser.BlendModes.ADD).setDepth(cw.y + 0.11);
+        const fl = this.add.image(tx, fy, 'flame').setOrigin(0.5, 0.92).setDisplaySize(12 * sc * 2.2, 18 * sc * 2.2).setTint(0xffc060).setBlendMode(Phaser.BlendModes.ADD).setDepth(cw.y + 0.12);
+        world.add([glow, fl]);
+        this.tweens.add({ targets: fl, scaleY: fl.scaleY * 1.25, scaleX: fl.scaleX * 0.85, duration: 100 + Math.random() * 80, yoyo: true, repeat: -1 });
+        this.tweens.add({ targets: glow, alpha: 0.25, duration: 150 + Math.random() * 150, yoyo: true, repeat: -1 });
+      }
+      // sol du couloir (2 dalles de large)
+      for (let gy = 0; gy < 2; gy++) {
+        const c = iso(gx + 0.5, gy + 0.5);
+        const room = floors[(((gx + 5) >> 1) % floors.length + floors.length) % floors.length];
+        this.add.image(c.x, c.y, `iso_ground_${room}`).setDisplaySize(TW + 2, TH + 1).setDepth(-50);
+        if (gy === 0) this.add.image(c.x, c.y, 'iso_ao_r').setDisplaySize(TW + 2, TH + 1).setDepth(-49);
+      }
+      // rebord avant coupé + socle
+      const cf = iso(gx + 0.5, 2.5);
+      world.add(this.add.image(cf.x, cf.y, SpriteFactory.isoBlock('cave', v, 'low')).setOrigin(0.5, (ISO.TOP + ISO.H / 2 + ISO.LOW) / texL).setDisplaySize(TW + 1, texL * sc + 0.5).setDepth(cf.y + TH));
+      this.add.image(cf.x - TW / 2, cf.y, SpriteFactory.isoBase('cave', 'l', v % 2)).setOrigin(0, 0).setDisplaySize(TW / 2 + 0.5, (ISO.H / 2 + ISO.BASE) * sc).setDepth(-60);
+    }
+    // accessoires le long du mur
+    for (const [id, gx] of [['brazier', -1.2], ['barrel', 1.2], ['chest', 3.3], ['crate', 5.2], ['goldpile', 7.3]]) {
+      const p = iso(gx, 0.22);
+      const w = TW * 0.42;
+      world.add(this.add.image(p.x, p.y, `prop_${id}`).setOrigin(0.5, PROP_FOOT / PROP_H).setDisplaySize(w, (w * PROP_H) / PROP_W).setDepth(p.y));
+    }
+
+    // Parade de monstres le long du couloir
     const parade = ['goblin', 'slime', 'skeleton', 'bat', 'orc', 'mimic', 'whelp', 'ghost'];
-    const size = Math.min(width / 5.5, 110 * S);
+    const size = Math.min(TW * 0.62, 120 * S);
     this.parade = [];
-    this.paradeSpeed = width / 22;
+    this.paradeSize = size;
     parade.forEach((id, i) => {
-      const x = ((i + 0.5) / parade.length) * width * 1.4 - width * 0.2;
-      const y = height * 0.34 - size * 0.38;
-      const sh = this.add.image(x, y + size * 0.42, 'shadow').setDisplaySize(size * 0.8, size * 0.2);
-      const spr = this.add.image(x, y, `mon_${id}`).setDisplaySize(size, size).setFlipX(true);
-      this.tweens.add({ targets: spr, y: y - size * 0.06, duration: 500 + i * 70, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      this.parade.push({ spr, sh });
+      const sh = this.add.image(0, 0, 'shadow').setDisplaySize(size * 0.8, size * 0.22);
+      const spr = this.add.image(0, 0, `mon_${id}`).setDisplaySize(size, size).setFlipX(true);
+      world.add([sh, spr]);
+      this.parade.push({ spr, sh, gx: -4 + i * 1.7, gy: i % 2 ? 1.25 : 0.85, ph: Math.random() * 6 });
     });
+    this.add.image(width / 2, height * 0.3, 'glow').setDisplaySize(width * 1.6, height * 0.5).setTint(0xff7a2b).setAlpha(0.12).setBlendMode(Phaser.BlendModes.ADD);
 
     // Titre
     const title = this.add.text(width / 2, height * 0.13, 'DUNGEON\nWORKSHOP', {
@@ -52,7 +97,7 @@ export class MainMenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
     title.setShadow(0, 0, '#ff6a1a', 30 * S, true, true);
     this.tweens.add({ targets: title, scale: 1.03, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    this.add.text(width / 2, height * 0.13 + title.height * 0.6, 'V2 · Le donjon, c’est vous.', {
+    this.add.text(width / 2, height * 0.13 + title.height * 0.6, 'V3 · 2.5D · Le donjon, c’est vous.', {
       fontFamily: FONT_TITLE, fontSize: `${Math.round(16 * S)}px`, color: '#c9b8a6', stroke: '#000', strokeThickness: 4 * S,
     }).setOrigin(0.5);
 
@@ -156,13 +201,22 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   update(t, dt) {
-    this.bg.tilePositionX += dt * 0.01;
-    this.bg2.tilePositionX -= dt * 0.02;
     const { width } = this.scale;
+    for (const f of this.fogs) {
+      f.x += (f.speed * dt) / 1000;
+      if (f.x > width * 1.4) f.x = -width * 0.4;
+      else if (f.x < -width * 0.4) f.x = width * 1.4;
+    }
+    // Les monstres descendent le couloir en se dandinant
+    const size = this.paradeSize;
     for (const p of this.parade) {
-      p.spr.x -= (this.paradeSpeed * dt) / 1000;
-      if (p.spr.x < -width * 0.2) p.spr.x += width * 1.4;
-      p.sh.x = p.spr.x;
+      p.gx += (dt / 1000) * 0.32;
+      if (p.gx > 9) p.gx -= 13.6;
+      const feet = this.menuIso(p.gx, p.gy);
+      const hop = Math.abs(Math.sin(t / 180 + p.ph)) * size * 0.07;
+      p.spr.setPosition(feet.x, feet.y - size * 0.42 - hop).setDepth(feet.y);
+      p.spr.setAngle(Math.sin(t / 180 + p.ph) * 4);
+      p.sh.setPosition(feet.x, feet.y).setDepth(feet.y - 0.01).setAlpha(1 - hop / (size * 0.14));
     }
   }
 }

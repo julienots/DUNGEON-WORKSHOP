@@ -99,6 +99,18 @@ function cobble(ctx, base0, accent, rnd, S) {
   }
 }
 
+/** Sol nu d'une salle (pavés à ses couleurs, sans le décor central) — dalles de l'arène 2.5D. */
+export function drawPlainFloor(ctx, room, seed, S = 128) {
+  cobble(ctx, room.tile.floor, room.tile.accent, seeded(seed), S);
+  const rnd = seeded(seed * 3 + 1);
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = rgba(room.tile.accent, 0.08 + rnd() * 0.06);
+    ctx.beginPath();
+    ctx.arc(rnd() * S, rnd() * S, 6 + rnd() * 14, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 /** Ombre intérieure (bords sombres) appliquée par-dessus chaque salle. */
 export function drawInnerShade(ctx, S = 128) {
   ctx.fillStyle = radial(ctx, S / 2, S / 2, S * 0.75, [[0.45, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.55)']]);

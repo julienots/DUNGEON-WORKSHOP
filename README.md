@@ -4,6 +4,15 @@ Jeu mobile HTML5 (Phaser 3) de **gestion / idle / construction / collection** : 
 Construisez des salles, placez vos monstres, installez des pièges, détruisez les aventuriers, récoltez leurs
 ressources… et recommencez plus puissant grâce à l'Ascension.
 
+> **Version 3 — 2.5D** : tout le donjon passe en **vue isométrique** ultra détaillée. Blocs de roche en volume
+> avec maçonnerie propre à chaque thème (strates, briques, pierre de taille, cristaux, circuits), murs coupés devant
+> les salles pour garder la lisibilité, torches murales animées, flaques de lumière, ombres portées des murs,
+> socle de diorama (strates de terre, racines, gemmes), 30 accessoires en volume posés dans les 23 salles
+> (coffres, autels, cuves de mutation, bobines Tesla, enclumes, tombes, arbres…), brume et rais de lumière.
+> L'arène de combat devient une salle isométrique à double assise de murs, et l'accueil un couloir de donjon
+> où défile la parade des monstres. Cadrage automatique sur la zone creusée, glisser pour explorer, dézoom pour
+> voir tout l'étage.
+>
 > **Version 2** : écran d'accueil, 8 modes de jeu, synergies, traits et mutations, réactions élémentaires,
 > 8 biomes, collection (coffres, skins, décorations), Prestige 2.0, saisons hors ligne, objectifs endgame.
 > Les sauvegardes V1 sont migrées automatiquement (la V1 d'origine est conservée en copie de secours).
@@ -44,7 +53,7 @@ modes de jeu de bout en bout, collection et saisons. Captures dans `artifacts/e2
 
 | Système | Contenu |
 |---|---|
-| Donjon | Grille 2.5D par étage, construire / améliorer (niv. 100) / déplacer / transformer / détruire / agrandir, règles de placement |
+| Donjon | Grille isométrique 2.5D par étage (tri de profondeur, murs coupés, torches, accessoires, socle), construire / améliorer (niv. 100) / déplacer / transformer / détruire / agrandir, règles de placement |
 | Accueil (V2) | Hub : Jouer, Modes, Maîtrise, Collection, Saison, Codex, Prestige, Paramètres ; bouton retour Android |
 | Salles | 23 types (21 constructibles), classés en catégories, dont V2 : entraînement, mutation, arène, maudite, portail, salle du Maître : basique, combat, lave, gelée, toxique, trésor, labo, crypte, tempêtes, bosquet, sanctuaire, mine, forge, dimensionnelle, antre du gardien… ; 34 synergies entre salles adjacentes (aperçu avant construction) |
 | Donjon (V2) | Zoom et déplacement à deux doigts, aperçu avant de construire, liens de synergie, décorations |
@@ -73,7 +82,8 @@ src/
   systems/     Combat, Raid, Dungeon, Monster, Trap, Adventurer, Equipment, Economy,
                Research, Treasury, Shop, Mission, Achievement, Prestige, Event, Boss,
                Offline, Save, Tutorial, Modifier, Stats, Codex, AudioManager
-  gfx/         SpriteFactory + art procédural (monstres, héros, tuiles, effets)
+  gfx/         SpriteFactory + art procédural (monstres, héros, tuiles, effets) ;
+               isoArt.js (blocs, sols, socle, torches en isométrique) et isoProps.js (accessoires 2.5D)
   scenes/      Boot, Preload, Core, MainMenu, Dungeon, Battle + scènes de menus
   ui/          UIManager, Router, Button, Card, Modal, ResourceBar, ProgressBar,
                MonsterCard, RoomCard, NavBar, DungeonHUD, screens/…

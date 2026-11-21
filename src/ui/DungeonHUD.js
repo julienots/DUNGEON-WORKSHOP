@@ -50,7 +50,7 @@ export class DungeonHUD {
     this.zoomReset = zb('⤢', 0, 'Vue d’ensemble');
     this.zoomReset.classList.add('hidden');
     this.zoomCtl = h('div.zoom-ctl', zb('＋', 1, 'Zoomer'), zb('－', -1, 'Dézoomer'), this.zoomReset);
-    g.bus.on('dungeonZoom', (z) => this.zoomReset.classList.toggle('hidden', z <= 1.001));
+    g.bus.on('dungeonZoom', (z) => this.zoomReset.classList.toggle('hidden', Math.abs(z - 1) < 0.001));
     this.el = h('div.dungeon-hud', this.row, this.zoomCtl, this.strip);
     this.host.appendChild(this.el);
     this.updateSpeed();
