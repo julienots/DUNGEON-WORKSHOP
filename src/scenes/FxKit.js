@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { stripEmoji } from '../ui/glyphs.js';
 import { ELEMENTS } from '../data/elements.js';
 import { FONT_TITLE } from '../utils/constants.js';
 import { formatShort } from '../utils/format.js';
@@ -106,6 +107,7 @@ export class FxKit {
   }
 
   floatText(x, y, text, color = '#fff', size = 1) {
+    if (!stripEmoji(String(text)).trim()) return null; // icône seule (émoji retiré) : rien à afficher
     const S = this.S;
     const t = this.getText();
     t.setText(text).setFontSize(Math.round(24 * size * S)).setColor(color).setStroke('#1b1216', 5 * S).setPosition(x, y).setDepth(5001);

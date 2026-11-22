@@ -34,6 +34,18 @@ import { installDebugPanel } from './ui/DebugPanel.js';
 import { MasteryScene } from './scenes/MasteryScene.js';
 import { CollectionScene } from './scenes/CollectionScene.js';
 import { SeasonScene } from './scenes/SeasonScene.js';
+import { installGlyphs, stripEmoji } from './ui/glyphs.js';
+
+// Aucun émoji à l'écran : pictogrammes vectoriels dans l'interface, émojis retirés des textes du canevas
+installGlyphs(document.body);
+{
+  const proto = Phaser.GameObjects.Text.prototype;
+  const setText = proto.setText;
+  proto.setText = function (value) {
+    const v = Array.isArray(value) ? value.map((x) => stripEmoji(String(x))) : typeof value === 'string' ? stripEmoji(value) : value;
+    return setText.call(this, v);
+  };
+}
 
 /** Résolution interne : pixels physiques (net sur écrans haute densité), plafonnée pour les performances. */
 const DPR = Math.min(2, window.devicePixelRatio || 1);

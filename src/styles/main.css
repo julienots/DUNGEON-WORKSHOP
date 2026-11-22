@@ -3194,3 +3194,22 @@ body.sheet-open .zoom-ctl { display: none; }
 .debug-select { min-height: 36px; max-width: 180px; border-radius: 8px; background: var(--panel-2); color: var(--text); border: 1px solid var(--line-soft); }
 .debug .row { margin-bottom: 6px; }
 .floor-warn { color: #ffcc4d; margin-top: 4px; }
+
+/* ------------------------------------------------------------------ pictogrammes (remplacent les émojis) */
+.glyph-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  vertical-align: -0.18em;
+}
+.glyph-wrap .glyph {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+.glyph-wrap + .glyph-wrap { margin-left: 0.1em; }
+/* un conteneur d'icône vidé (émoji sans pictogramme) ne laisse pas de trou */
+.hub-tile-icon:empty, .nav-icon:empty, .toast-icon:empty, .card-icon:empty, .room-icon:empty, .syn-chip span:empty, .rcard-icon:empty { display: none; }
+.hub-tile-icon .glyph, .icon-btn .glyph, .nav-icon .glyph { width: 1.3em; height: 1.3em; }

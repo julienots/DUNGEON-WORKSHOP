@@ -343,6 +343,28 @@ class SpriteFactoryImpl {
       ctx.roundRect(6, 6, 116, 116, 14);
       ctx.stroke();
     });
+    // pioche (indice de creusage)
+    this.make('ico_pick', 64, 64, (ctx) => {
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#1b1216';
+      ctx.lineWidth = 9;
+      ctx.beginPath();
+      ctx.moveTo(30, 16);
+      ctx.lineTo(48, 58);
+      ctx.stroke();
+      ctx.strokeStyle = '#a0703a';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(6, 22);
+      ctx.quadraticCurveTo(30, 2, 56, 18);
+      ctx.quadraticCurveTo(30, 12, 6, 22);
+      ctx.fillStyle = '#c0c8d4';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#1b1216';
+      ctx.stroke();
+    });
     this.make('pixel', 4, 4, (ctx) => {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, 4, 4);

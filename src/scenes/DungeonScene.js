@@ -605,7 +605,7 @@ export class DungeonScene extends Phaser.Scene {
     // Synergies actives (V2)
     const synCount = this.g.dungeon.synergiesAt(this.fi, x, y).length;
     if (synCount) {
-      const st = addE(this.add.text(c.x - TW * 0.36, c.y, synCount > 1 ? `⭐${synCount}` : '⭐', {
+      const st = addE(this.add.text(c.x - TW * 0.36, c.y, synCount > 1 ? `★${synCount}` : '★', {
         fontFamily: FONT_BODY, fontStyle: 'bold', fontSize: `${Math.round(TW * 0.13)}px`, color: '#ffe14d', stroke: '#1b1216', strokeThickness: 3 * S,
       }).setOrigin(0, 0.5), 1e6);
       st.setShadow(0, 1 * S, '#000', 3 * S, true, true);
@@ -728,7 +728,7 @@ export class DungeonScene extends Phaser.Scene {
           if (!this.g.dungeon.hasRoomNeighbor(this.fi, x, y)) continue;
           const ok = this.g.dungeon.canBuild(this.fi, x, y, this.buildSel.id);
           const syn = ok.ok ? this.g.dungeon.previewSynergies(this.fi, x, y, this.buildSel.id).length : 0;
-          mark(x, y, ok.ok ? (syn ? 0xffd84a : 0x6bff8a) : 0xff5a5a, ok.ok ? (syn ? '⭐' : '+') : '✕');
+          mark(x, y, ok.ok ? (syn ? 0xffd84a : 0x6bff8a) : 0xff5a5a, ok.ok ? (syn ? '★' : '+') : '✕');
         }
       }
       // Aperçu : salle fantôme + liens de synergie
@@ -744,7 +744,7 @@ export class DungeonScene extends Phaser.Scene {
           if (!other) continue;
           const o = this.cellCenter(other.x, other.y);
           const line = this.add.line(0, 0, c.x, c.y, o.x, o.y, 0xffe14d, 0.9).setOrigin(0).setLineWidth(4 * this.S).setDepth(2504);
-          const star = this.add.text((c.x + o.x) / 2, (c.y + o.y) / 2, '⭐', { fontSize: `${Math.round(T * 0.28)}px` }).setOrigin(0.5).setDepth(2505);
+          const star = this.add.text((c.x + o.x) / 2, (c.y + o.y) / 2, '★', { color: '#ffe14d', stroke: '#1b1216', strokeThickness: 4 * this.S, fontSize: `${Math.round(T * 0.28)}px` }).setOrigin(0.5).setDepth(2505);
           this.tweens.add({ targets: star, scale: 1.25, duration: 450, yoyo: true, repeat: -1 });
           this.highlights.push(line, star);
         }
@@ -753,7 +753,7 @@ export class DungeonScene extends Phaser.Scene {
       for (const r of this.g.dungeon.roomCells(this.fi)) {
         if (r.cell.trap || !ROOMS[r.cell.room].trapSlots) continue;
         const ok = this.g.traps.canPlace(this.fi, r.x, r.y, this.buildSel.id);
-        mark(r.x, r.y, ok.ok ? 0xffb52e : 0xff5a5a, ok.ok ? '🧨' : '✕');
+        mark(r.x, r.y, ok.ok ? 0xffb52e : 0xff5a5a, ok.ok ? '+' : '✕');
       }
     } else if (this.mode === 'move' && this.moveFrom) {
       const sel = outlineAt(this.moveFrom.x, this.moveFrom.y, 0x4fa3ff, 2500);
@@ -771,7 +771,7 @@ export class DungeonScene extends Phaser.Scene {
         for (let x = 0; x < f.cols; x++) {
           if (f.cells[cellKey(x, y)] || !this.g.dungeon.hasRoomNeighbor(this.fi, x, y)) continue;
           const c = this.cellTop(x, y);
-          const t = this.add.text(c.x, c.y, '⛏️', { fontSize: `${Math.round(TW * 0.17)}px` }).setOrigin(0.5).setAlpha(0.35).setDepth(2400);
+          const t = this.add.image(c.x, c.y, 'ico_pick').setDisplaySize(TW * 0.2, TW * 0.2).setAlpha(0.4).setDepth(2400);
           this.tweens.add({ targets: t, alpha: 0.7, y: c.y - TH * 0.08, duration: 1100, yoyo: true, repeat: -1, delay: (x + y) * 120, ease: 'Sine.easeInOut' });
           this.highlights.push(t);
         }
@@ -1225,9 +1225,9 @@ export class DungeonScene extends Phaser.Scene {
     const c = core ? this.cellCenter(core.x, core.y) : { x: this.scale.width / 2, y: this.scale.height / 2 };
     if (summary.outcome !== 'looted' && g > 0) {
       sfx('coins');
-      this.fx.floatText(c.x, c.y - T * 0.5, `+${formatShort(g)} 🪙`, '#ffe14d', 1.2);
+      this.fx.floatText(c.x, c.y - T * 0.5, `+${formatShort(g)} or`, '#ffe14d', 1.2);
     } else if (summary.stolen) {
-      this.fx.floatText(c.x, c.y - T * 0.5, `-${formatShort(summary.stolen)} 🪙`, '#ff6a6a', 1.1);
+      this.fx.floatText(c.x, c.y - T * 0.5, `-${formatShort(summary.stolen)} or`, '#ff6a6a', 1.1);
     }
   }
 
@@ -1248,7 +1248,7 @@ export class DungeonScene extends Phaser.Scene {
     view.maxHp = u.maxHp;
     view.hpVal = u.hp;
     if (u.elite) {
-      const star = this.add.text(0, 0, '⭐', { fontSize: `${Math.round(T * 0.13)}px` }).setOrigin(0.5).setDepth(1e6);
+      const star = this.add.text(0, 0, '★', { fontSize: `${Math.round(T * 0.16)}px`, color: '#ffd84a', stroke: '#1b1216', strokeThickness: 3 * this.S }).setOrigin(0.5).setDepth(1e6);
       this.entityLayer.add(star);
       view.extra = star;
     }
